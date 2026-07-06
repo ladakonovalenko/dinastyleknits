@@ -52,6 +52,7 @@ function renderHeader() {
         <img src="static/images/emblem.png" alt="" />
         DinaStyleKnits
       </a>
+      <p class="header-tagline">Knitting &amp; Crochet Patterns · Since 2014</p>
       <ul class="nav-links" id="nav-links">${navHtml}</ul>
       <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
