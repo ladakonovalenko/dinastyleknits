@@ -513,16 +513,6 @@ input:focus-visible {
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
-.social-links a svg {
-  width: 18px;
-  height: 18px;
-}
-
-.social-links a svg.icon-facebook {
-  width: 23px;
-  height: 23px;
-}
-
 .social-icon-img {
   width: 18px;
   height: 18px;

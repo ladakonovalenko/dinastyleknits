@@ -9,17 +9,17 @@ const SOCIAL_LINKS = [
   {
     label: "Facebook",
     url: "https://www.facebook.com/pages/Dinastyleknits/1541734096057441",
-    icon: `<svg class="icon-facebook" viewBox="2 3 19 19" fill="currentColor"><path d="M13.5 21v-7.5h2.4l.4-3h-2.8V8.6c0-.9.2-1.5 1.5-1.5h1.4V4.2c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7v3h2.7V21h3.8z"/></svg>`,
+    icon: `<img src="static/images/facebook-icon.png" alt="" class="social-icon-img" />`,
   },
   {
     label: "Instagram",
     url: "http://instagram.com/dina.style",
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.9" fill="currentColor" stroke="none"/></svg>`,
+    icon: `<img src="static/images/instagram-icon.png" alt="" class="social-icon-img" />`,
   },
   {
     label: "Pinterest",
     url: "https://www.pinterest.com/dinastyleknits/",
-    icon: `<svg viewBox="3 2 18 21" fill="currentColor"><path d="M12 3C7.6 3 4.5 6 4.5 9.6c0 2.1 1.1 3.7 2.8 4.3.3.1.5 0 .6-.3l.2-.9c.1-.2 0-.4-.1-.6-.4-.5-.7-1.2-.7-2.1 0-2.8 2.1-5.3 5.5-5.3 3 0 4.6 1.8 4.6 4.3 0 3.2-1.4 5.9-3.5 5.9-1.1 0-2-.9-1.7-2.1.3-1.4 1-2.9 1-3.9 0-.9-.5-1.7-1.5-1.7-1.2 0-2.2 1.3-2.2 3 0 1.1.4 1.8.4 1.8s-1.2 5.2-1.5 6.1c-.4 1.5-.2 3.6-.1 3.8 0 .1.2.1.2 0 .1-.1 1.4-1.8 1.9-3.5.1-.5.7-2.9.7-2.9.4.7 1.4 1.3 2.6 1.3 3.4 0 5.9-3.1 5.9-7.2C19.6 5.9 16.2 3 12 3z"/></svg>`,
+    icon: `<img src="static/images/pinterest-icon.png" alt="" class="social-icon-img" />`,
   },
   {
     label: "Etsy shop",
