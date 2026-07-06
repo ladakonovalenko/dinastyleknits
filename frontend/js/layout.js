@@ -14,7 +14,6 @@ const SOCIAL_LINKS = [
 
 const NAV_LINKS = [
   { label: "Home", href: "index.html", page: "home" },
-  { label: "Patterns", href: "patterns.html", page: "patterns" },
   { label: "New", href: "new.html", page: "new" },
   { label: "Blog", href: "blog.html", page: "blog" },
   { label: "About", href: "about.html", page: "about" },

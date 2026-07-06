@@ -1,12 +1,17 @@
 // Спільна функція рендерингу картки патерну — використовується і на головній
-// (тизер), і на /patterns.html (повна сітка), і на /new.html.
+// (повна сітка "All patterns"), і на /new.html.
+//
+// За рішенням замовниці (як експеримент) — клік по картці веде одразу на
+// відповідний товар на Etsy, в нову вкладку, без проміжної сторінки на
+// нашому сайті. pattern-detail.html лишається в проєкті на випадок, якщо
+// це рішення згодом переглянуть, але зараз ніде не використовується.
 
 function renderPatternCard(pattern) {
   const imageSrc = Api.imageUrl(pattern.image_filename);
   const badge = pattern.is_new ? `<span class="badge-new">New</span>` : "";
 
   return `
-    <a class="pattern-card" href="pattern-detail.html?slug=${encodeURIComponent(pattern.slug)}">
+    <a class="pattern-card" href="${pattern.etsy_url}" target="_blank" rel="noopener">
       <div class="pattern-card__image">
         ${imageSrc ? `<img src="${imageSrc}" alt="${escapeHtml(pattern.title)}" loading="lazy" />` : ""}
       </div>

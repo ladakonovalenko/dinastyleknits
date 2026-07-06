@@ -35,7 +35,7 @@ function renderDetail(container, pattern) {
     : "The description for this pattern is coming soon.";
 
   container.innerHTML = `
-    <p class="breadcrumb"><a href="patterns.html">← All patterns</a></p>
+    <p class="breadcrumb"><a href="index.html#all-patterns">← All patterns</a></p>
     <div class="pattern-detail">
       <div class="pattern-detail__image">
         ${imageSrc ? `<img src="${imageSrc}" alt="${escapeHtml(pattern.title)}" />` : ""}
@@ -58,7 +58,7 @@ function renderNotFound(container) {
     <div class="stub-page">
       <h1>Pattern not found</h1>
       <p>This link may be outdated. Browse the full pattern collection instead.</p>
-      <p style="margin-top: 24px;"><a class="btn btn-outline" href="patterns.html">All patterns</a></p>
+      <p style="margin-top: 24px;"><a class="btn btn-outline" href="index.html#all-patterns">All patterns</a></p>
     </div>
   `;
 }
