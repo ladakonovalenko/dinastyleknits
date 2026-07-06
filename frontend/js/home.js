@@ -9,6 +9,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const patterns = await Api.getPatterns({ onlyNew: true });
     renderPatternGrid(container, patterns.slice(0, 4));
   } catch (err) {
-    container.innerHTML = `<p class="grid-empty">Не вдалось завантажити патерни. Спробуйте оновити сторінку.</p>`;
+    container.innerHTML = `<p class="grid-empty">Couldn't load patterns. Please try refreshing the page.</p>`;
   }
 });

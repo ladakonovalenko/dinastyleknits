@@ -23,7 +23,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderDetail(container, pattern);
     document.title = `${pattern.title} — DinaStyleKnits`;
   } catch (err) {
-    container.innerHTML = `<p class="grid-empty">Не вдалось завантажити патерн. Спробуйте оновити сторінку.</p>`;
+    console.error("Failed to load pattern:", err);
+    container.innerHTML = `<p class="grid-empty">Couldn't load this pattern. Please try refreshing the page.</p>`;
   }
 });
 
@@ -31,10 +32,10 @@ function renderDetail(container, pattern) {
   const imageSrc = Api.imageUrl(pattern.image_filename);
   const description = pattern.description
     ? escapeHtml(pattern.description)
-    : "Опис цього патерну зʼявиться тут найближчим часом.";
+    : "The description for this pattern is coming soon.";
 
   container.innerHTML = `
-    <p class="breadcrumb"><a href="patterns.html">← Усі патерни</a></p>
+    <p class="breadcrumb"><a href="patterns.html">← All patterns</a></p>
     <div class="pattern-detail">
       <div class="pattern-detail__image">
         ${imageSrc ? `<img src="${imageSrc}" alt="${escapeHtml(pattern.title)}" />` : ""}
@@ -45,7 +46,7 @@ function renderDetail(container, pattern) {
         <p class="pattern-detail__price">${escapeHtml(pattern.price)}</p>
         <p class="pattern-detail__description">${description}</p>
         <a class="btn btn-accent" href="${pattern.etsy_url}" target="_blank" rel="noopener">
-          Купити на Etsy
+          Buy on Etsy
         </a>
       </div>
     </div>
@@ -55,9 +56,9 @@ function renderDetail(container, pattern) {
 function renderNotFound(container) {
   container.innerHTML = `
     <div class="stub-page">
-      <h1>Патерн не знайдено</h1>
-      <p>Можливо, посилання застаріле. Перегляньте весь каталог патернів.</p>
-      <p style="margin-top: 24px;"><a class="btn btn-outline" href="patterns.html">Усі патерни</a></p>
+      <h1>Pattern not found</h1>
+      <p>This link may be outdated. Browse the full pattern collection instead.</p>
+      <p style="margin-top: 24px;"><a class="btn btn-outline" href="patterns.html">All patterns</a></p>
     </div>
   `;
 }

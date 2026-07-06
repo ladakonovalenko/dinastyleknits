@@ -6,14 +6,14 @@ const Api = {
     const url = new URL(`${API_BASE_URL}/api/patterns`);
     if (onlyNew) url.searchParams.set("only_new", "true");
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Не вдалось завантажити список патернів");
+    if (!res.ok) throw new Error("Failed to load pattern list");
     return res.json();
   },
 
   async getPattern(slug) {
     const res = await fetch(`${API_BASE_URL}/api/patterns/${encodeURIComponent(slug)}`);
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error("Не вдалось завантажити патерн");
+    if (!res.ok) throw new Error("Failed to load pattern");
     return res.json();
   },
 
@@ -25,7 +25,7 @@ const Api = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || "Не вдалось підписатись");
+      throw new Error(data.detail || "Failed to subscribe");
     }
     return res.json();
   },

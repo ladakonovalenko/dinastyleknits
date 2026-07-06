@@ -19,7 +19,7 @@ function renderPatternCard(pattern) {
 
 function renderPatternGrid(container, patterns) {
   if (!patterns.length) {
-    container.innerHTML = `<p class="grid-empty">Поки що тут порожньо — патерни зʼявляться зовсім скоро.</p>`;
+    container.innerHTML = `<p class="grid-empty">Nothing here yet — patterns are coming very soon.</p>`;
     return;
   }
   container.innerHTML = patterns.map(renderPatternCard).join("");

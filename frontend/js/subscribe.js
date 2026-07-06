@@ -18,11 +18,11 @@ function initSubscribeForm() {
 
     try {
       await Api.subscribe(input.value.trim());
-      messageEl.textContent = "Дякуємо! Ви підписані на новини й знижки.";
+      messageEl.textContent = "Thanks! You're subscribed to news and discounts.";
       messageEl.classList.add("is-success");
       form.reset();
     } catch (err) {
-      messageEl.textContent = "Щось пішло не так. Перевірте email і спробуйте ще раз.";
+      messageEl.textContent = "Something went wrong. Please check your email and try again.";
       messageEl.classList.add("is-error");
     } finally {
       button.disabled = false;
