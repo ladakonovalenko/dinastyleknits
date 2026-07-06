@@ -518,6 +518,11 @@ input:focus-visible {
   height: 18px;
 }
 
+.social-links a svg.icon-facebook {
+  width: 23px;
+  height: 23px;
+}
+
 .social-icon-img {
   width: 18px;
   height: 18px;
