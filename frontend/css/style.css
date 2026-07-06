@@ -227,6 +227,15 @@ input:focus-visible {
   margin: 0 0 var(--space-2);
 }
 
+.hero__title-accent {
+  display: block;
+  width: 120px;
+  height: 4px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  margin: 0 0 var(--space-3);
+}
+
 .hero__subtitle {
   font-size: 1.05rem;
   color: var(--color-gray-500);
@@ -241,6 +250,7 @@ input:focus-visible {
 }
 
 .hero__image {
+  display: block;
   aspect-ratio: 1 / 1;
   background: var(--color-gray-100);
   border-radius: var(--radius);
