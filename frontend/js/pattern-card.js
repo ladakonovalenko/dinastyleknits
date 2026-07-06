@@ -15,10 +15,7 @@ function renderPatternCard(pattern) {
       <div class="pattern-card__image">
         ${imageSrc ? `<img src="${imageSrc}" alt="${escapeHtml(pattern.title)}" loading="lazy" />` : ""}
       </div>
-      <div class="pattern-card__title-row">
-        ${badge}
-        <p class="pattern-card__title">${escapeHtml(pattern.title)}</p>
-      </div>
+      <p class="pattern-card__title">${badge}${escapeHtml(pattern.title)}</p>
       <p class="pattern-card__price">${escapeHtml(pattern.price)}</p>
     </a>
   `;
