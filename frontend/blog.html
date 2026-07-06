@@ -3,25 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blog — DinaStyleKnits</title>
+  <title>Blog &amp; Video Tutorials — DinaStyleKnits</title>
+  <meta name="description" content="Knitting and crochet video tutorials from DinaStyleKnits — step-by-step guides for shawls, ponchos, capes and bags." />
   <link rel="icon" href="static/images/emblem.png" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/blog.css" />
 </head>
 <body data-page="blog">
 
   <header class="site-header" id="site-header"></header>
 
   <main>
-    <div class="container stub-page">
-      <h1>Blog &amp; video tutorials</h1>
-      <p>
-        Video walkthroughs for every pattern are coming here soon. In the
-        meantime, browse the full pattern collection below.
-      </p>
-      <p style="margin-top: 32px;">
-        <a class="btn btn-primary" href="index.html#all-patterns">Browse patterns</a>
-      </p>
-    </div>
+    <section class="section blog-intro">
+      <div class="container">
+        <p class="hero__eyebrow-standalone">Free to watch</p>
+        <h1 class="about-title">Video Tutorials</h1>
+        <p class="about-subtitle">
+          Step-by-step knitting and crochet tutorials, straight from the
+          DinaStyleKnits YouTube channel — watch along while you make your own.
+        </p>
+      </div>
+    </section>
+
+    <section class="section section--muted">
+      <div class="container">
+        <div class="section__header">
+          <h2 class="section__title">Latest videos</h2>
+          <a class="section__link" href="https://www.youtube.com/@dinastyleknits.patterns/featured" target="_blank" rel="noopener">View channel</a>
+        </div>
+        <div class="video-grid" id="video-grid"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stub-page">
+        <h2 style="margin-bottom: var(--space-2);">More stories, coming soon</h2>
+        <p>
+          Written tips, pattern stories and behind-the-scenes posts will
+          appear here in the future. For now, subscribe on YouTube to catch
+          every new tutorial as soon as it's out.
+        </p>
+        <p style="margin-top: 32px;">
+          <a class="btn btn-primary" href="https://www.youtube.com/@dinastyleknits.patterns/featured" target="_blank" rel="noopener">Subscribe on YouTube</a>
+        </p>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer" id="site-footer"></footer>
@@ -29,5 +55,6 @@
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/blog.js"></script>
 </body>
 </html>

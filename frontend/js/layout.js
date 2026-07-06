@@ -26,6 +26,11 @@ const SOCIAL_LINKS = [
     url: "https://www.etsy.com/shop/DinaStyleKnits",
     icon: `<img src="static/images/etsy-icon.png" alt="" class="social-icon-img" />`,
   },
+  {
+    label: "YouTube",
+    url: "https://www.youtube.com/@dinastyleknits.patterns/featured",
+    icon: `<img src="static/images/youtube-icon.png" alt="" class="social-icon-img icon-youtube" />`,
+  },
 ];
 
 const NAV_LINKS = [
