@@ -337,10 +337,18 @@ input:focus-visible {
   transform: scale(1.04);
 }
 
+.pattern-card__title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
 .pattern-card__title {
   font-weight: 600;
   font-size: 0.95rem;
-  margin: 0 0 4px;
+  margin: 0;
   transition: color 0.15s ease;
 }
 
@@ -356,6 +364,7 @@ input:focus-visible {
 
 .badge-new {
   display: inline-block;
+  flex-shrink: 0;
   background: var(--color-accent);
   color: var(--color-white);
   font-size: 0.7rem;
@@ -364,7 +373,6 @@ input:focus-visible {
   letter-spacing: 0.04em;
   padding: 3px 8px;
   border-radius: 4px;
-  margin-bottom: var(--space-1);
 }
 
 .grid-loading,
