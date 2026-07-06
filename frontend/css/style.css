@@ -4,7 +4,7 @@
    Мінімалізм: багато повітря, мінімум декору, акцент лише на кольорі й типографіці
    ========================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Alex+Brush&display=swap');
 
 :root {
   /* Кольори — див. звіт з аналізу палітри (HEX виміряно напряму з банера/емблеми) */
@@ -199,9 +199,15 @@ input:focus-visible {
 
 .hero__inner {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: var(--space-6);
-  align-items: center;
+  grid-template-columns: 1.15fr 0.9fr 0.7fr;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.hero__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .hero__eyebrow {
@@ -245,6 +251,41 @@ input:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.hero__brand-panel {
+  background: var(--color-accent);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-3);
+  gap: var(--space-2);
+}
+
+.hero__brand-panel-script {
+  font-family: 'Alex Brush', cursive;
+  color: var(--color-white);
+  font-size: 2.1rem;
+  line-height: 1;
+  margin: 0;
+}
+
+.hero__brand-panel-divider {
+  width: 40px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hero__brand-panel-tagline {
+  color: var(--color-white);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .scroll-cue {
