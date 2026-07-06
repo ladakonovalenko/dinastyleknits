@@ -17,7 +17,7 @@ class PatternBase(BaseModel):
 
 
 class PatternCreate(PatternBase):
-    slug: str
+    slug: Optional[str] = None
 
 
 class PatternUpdate(BaseModel):
@@ -36,6 +36,7 @@ class PatternOut(PatternBase):
 
     id: int
     slug: str
+    image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

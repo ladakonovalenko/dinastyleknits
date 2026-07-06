@@ -1,0 +1,190 @@
+/* =========================================================================
+   Стилі адмінки — окремий файл, бо це внутрішній інструмент (не для
+   відвідувачів сайту), тож дизайн трохи утилітарніший за основний сайт.
+   Кольори/шрифт беруться зі спільних змінних у style.css.
+   ========================================================================= */
+
+.admin-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.admin-topbar h1 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.admin-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-2) var(--space-8);
+}
+
+/* ---------- Логін ---------- */
+
+.admin-login {
+  max-width: 360px;
+  margin: var(--space-10) auto 0;
+  text-align: center;
+}
+
+.admin-login h1 {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-3);
+}
+
+/* ---------- Форми ---------- */
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-gray-50);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.admin-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-field input[type="text"],
+.admin-field input[type="email"],
+.admin-field input[type="password"],
+.admin-field input[type="url"],
+.admin-field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  min-height: 44px;
+}
+
+.admin-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.admin-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row;
+}
+
+.admin-checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-form-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.admin-message {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.admin-message.is-error {
+  color: #C0392B;
+}
+
+.admin-message.is-success {
+  color: #1E7B4D;
+}
+
+/* ---------- Список товарів ---------- */
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.admin-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius);
+}
+
+.admin-list-item__thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  background: var(--color-gray-100);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.admin-list-item__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.admin-list-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-list-item__info p {
+  margin: 0;
+}
+
+.admin-list-item__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.admin-list-item__price {
+  color: var(--color-gray-500);
+  font-size: 0.85rem;
+}
+
+.admin-list-item__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-list-item__actions button {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  min-height: unset;
+}
+
+.btn-danger {
+  background: transparent;
+  border: 2px solid #C0392B;
+  color: #C0392B;
+}
+
+.btn-danger:hover {
+  background: #C0392B;
+  color: var(--color-white);
+}
+
+.admin-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: var(--space-4) 0 var(--space-2);
+}

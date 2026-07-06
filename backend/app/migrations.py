@@ -11,12 +11,17 @@ from sqlalchemy import inspect, text
 
 from .database import engine
 
+# BLOB (SQLite) vs BYTEA (Postgres) — тип бінарної колонки залежить від БД.
+_BINARY_TYPE = "BYTEA" if engine.dialect.name == "postgresql" else "BLOB"
+
 # Формат: "таблиця": [("колонка", "SQL-тип", "DEFAULT-вираз або None"), ...]
 COLUMNS_TO_ENSURE = {
     "patterns": [
         ("description", "TEXT", None),
         ("is_new", "BOOLEAN", "0"),
         ("sort_order", "INTEGER", "0"),
+        ("image_data", _BINARY_TYPE, None),
+        ("image_content_type", "TEXT", None),
     ],
     "posts": [
         ("youtube_url", "TEXT", None),

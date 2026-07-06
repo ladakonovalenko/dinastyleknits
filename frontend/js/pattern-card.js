@@ -7,7 +7,7 @@
 // це рішення згодом переглянуть, але зараз ніде не використовується.
 
 function renderPatternCard(pattern) {
-  const imageSrc = Api.imageUrl(pattern.image_filename);
+  const imageSrc = Api.fullImageUrl(pattern.image_url);
   const badge = pattern.is_new ? `<span class="badge-new">New</span>` : "";
 
   return `

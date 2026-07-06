@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function renderDetail(container, pattern) {
-  const imageSrc = Api.imageUrl(pattern.image_filename);
+  const imageSrc = Api.fullImageUrl(pattern.image_url);
   const description = pattern.description
     ? escapeHtml(pattern.description)
     : "The description for this pattern is coming soon.";

@@ -1,7 +1,7 @@
 import re
 import unicodedata
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -9,6 +9,9 @@ from ..auth import get_current_admin
 from ..database import get_db
 
 router = APIRouter(prefix="/api/patterns", tags=["patterns"])
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB — достатньо з запасом для фото 1024x1024
 
 
 def slugify(title: str) -> str:
@@ -35,6 +38,17 @@ def get_pattern(slug: str, db: Session = Depends(get_db)):
     if pattern is None:
         raise HTTPException(status_code=404, detail="Патерн не знайдено")
     return pattern
+
+
+@router.get("/{slug}/image")
+def get_pattern_image(slug: str, db: Session = Depends(get_db)):
+    """Віддає фото, завантажене через адмінку (зберігається в БД, а не на
+    диску — безкоштовний план Render не має постійного диска, тож файл,
+    записаний під час роботи застосунку, зникав би при кожному засинанні)."""
+    pattern = db.query(models.Pattern).filter(models.Pattern.slug == slug).first()
+    if pattern is None or not pattern.image_data:
+        raise HTTPException(status_code=404, detail="Зображення не знайдено")
+    return Response(content=pattern.image_data, media_type=pattern.image_content_type or "image/jpeg")
 
 
 # ---------- Адмінські ендпоінти (потрібен JWT) ----------
@@ -86,3 +100,32 @@ def delete_pattern(
         raise HTTPException(status_code=404, detail="Патерн не знайдено")
     db.delete(pattern)
     db.commit()
+
+
+@router.post("/{slug}/image", response_model=schemas.PatternOut)
+async def upload_pattern_image(
+    slug: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _admin: models.AdminUser = Depends(get_current_admin),
+):
+    """Завантаження/заміна фото товару. Викликається окремим запитом одразу
+    після створення патерну (спочатку створюємо запис із текстовими полями,
+    потім прикріплюємо до нього фото) — так адмінка може показати помилку
+    саме на етапі, де вона сталась."""
+    pattern = db.query(models.Pattern).filter(models.Pattern.slug == slug).first()
+    if pattern is None:
+        raise HTTPException(status_code=404, detail="Патерн не знайдено")
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Дозволені формати: JPEG, PNG, WebP")
+
+    content = await file.read()
+    if len(content) > MAX_IMAGE_SIZE:
+        raise HTTPException(status_code=400, detail="Файл завеликий (максимум 5MB)")
+
+    pattern.image_data = content
+    pattern.image_content_type = file.content_type
+    db.commit()
+    db.refresh(pattern)
+    return pattern
