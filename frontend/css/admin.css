@@ -106,6 +106,13 @@
   min-height: 44px;
 }
 
+.admin-field input[type="file"] {
+  padding: 10px 0;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
 .admin-field textarea {
   min-height: 80px;
   resize: vertical;
@@ -202,7 +209,8 @@
 .admin-list-item__actions button {
   padding: 8px 14px;
   font-size: 0.85rem;
-  min-height: unset;
+  min-height: 40px;
+  min-width: 40px;
 }
 
 .btn-danger {
@@ -220,4 +228,40 @@
   font-size: 1.1rem;
   font-weight: 700;
   margin: var(--space-4) 0 var(--space-2);
+}
+
+/* =========================================================================
+   МОБІЛЬНА АДАПТАЦІЯ
+   ========================================================================= */
+
+@media (max-width: 600px) {
+  .admin-list-item {
+    flex-wrap: wrap;
+  }
+
+  .admin-list-item__actions {
+    flex-basis: 100%;
+    margin-top: var(--space-1);
+  }
+
+  .admin-list-item__actions button {
+    flex: 1;
+  }
+
+  .admin-subscribers-header {
+    align-items: flex-start;
+  }
+
+  .admin-subscribers-header #export-csv-btn {
+    width: 100%;
+  }
+
+  .admin-form-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-form-actions button {
+    flex: 1;
+    min-width: 120px;
+  }
 }
