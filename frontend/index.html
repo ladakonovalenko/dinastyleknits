@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DinaStyleKnits — Modern Knit &amp; Crochet Patterns</title>
+  <meta name="description" content="Cozy, wearable knit and crochet patterns — PDF + video tutorials. Sustainable accessories since 2014." />
+  <link rel="icon" href="static/images/emblem.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="home">
+
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero__inner">
+        <div>
+          <p class="hero__eyebrow">Handmade patterns · Since 2014</p>
+          <h1 class="hero__title">Knit something worth keeping.</h1>
+          <p class="hero__subtitle">
+            Cozy, wearable PDF patterns for shawls, ponchos, capes and bags — every
+            one tested twice and explained gently, with a video tutorial alongside.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn-primary" href="patterns.html">Browse patterns</a>
+            <a class="btn btn-outline" href="#subscribe">Join the club</a>
+          </div>
+        </div>
+        <div class="hero__image">
+          <img src="static/images/emblem.png" alt="DinaStyleKnits emblem" style="object-fit: contain; padding: 48px; background: var(--color-accent-light);" />
+        </div>
+      </div>
+      <div class="scroll-cue">
+        <a href="#new-releases" aria-label="Прогорнути до нових релізів">↓</a>
+      </div>
+    </section>
+
+    <section class="section" id="new-releases">
+      <div class="container">
+        <div class="section__header">
+          <h2 class="section__title">New releases</h2>
+          <a class="section__link" href="new.html">View all</a>
+        </div>
+        <div class="pattern-grid" id="new-releases-grid">
+          <p class="grid-loading">Завантаження…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--muted" id="subscribe">
+      <div class="container">
+        <div class="subscribe">
+          <div class="subscribe__text">
+            <h3>Get a new pattern every month</h3>
+            <p>News, discounts and fresh patterns straight to your inbox.</p>
+          </div>
+          <form class="subscribe__form" id="subscribe-form">
+            <input type="email" name="email" placeholder="name@email.com" required />
+            <button type="submit" class="btn btn-accent">Subscribe</button>
+            <p class="subscribe__message"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/pattern-card.js"></script>
+  <script src="js/subscribe.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>
