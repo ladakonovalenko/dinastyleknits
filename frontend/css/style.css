@@ -509,9 +509,19 @@ input:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 700;
+  color: var(--color-black);
   transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.social-links a svg {
+  width: 18px;
+  height: 18px;
+}
+
+.social-icon-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .social-links a:hover {
