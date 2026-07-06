@@ -228,7 +228,11 @@
 }
 
 @media (max-width: 640px) {
-  .about-gallery {
-    grid-template-columns: repeat(2, 1fr);
+  .about-carousel__arrow--prev {
+    left: 8px;
+  }
+
+  .about-carousel__arrow--next {
+    right: 8px;
   }
 }

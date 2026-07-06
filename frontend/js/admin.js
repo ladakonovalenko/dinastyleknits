@@ -9,6 +9,8 @@ const TOKEN_KEY = "dinastyleknits_admin_token";
 let state = {
   token: localStorage.getItem(TOKEN_KEY) || null,
   patterns: [],
+  subscribers: [],
+  activeTab: "patterns", // "patterns" | "subscribers"
   editingSlug: null, // null = форма "додати новий", інакше — slug патерну, який редагується
   formError: "",
 };
@@ -30,7 +32,7 @@ async function init() {
   }
   try {
     await Api.me(state.token);
-    await loadPatterns();
+    await Promise.all([loadPatterns(), loadSubscribers()]);
     renderDashboard();
   } catch (err) {
     // Токен недійсний/прострочений — просимо увійти знову
@@ -42,6 +44,10 @@ async function init() {
 
 async function loadPatterns() {
   state.patterns = await Api.getPatterns();
+}
+
+async function loadSubscribers() {
+  state.subscribers = await Api.getSubscribers(state.token);
 }
 
 // ---------- Логін ----------
@@ -73,7 +79,7 @@ function renderLogin(message = "") {
       const { access_token } = await Api.login(email, password);
       localStorage.setItem(TOKEN_KEY, access_token);
       state.token = access_token;
-      await loadPatterns();
+      await Promise.all([loadPatterns(), loadSubscribers()]);
       renderDashboard();
     } catch (err) {
       renderLogin(err.message || "Wrong email or password.");
@@ -92,15 +98,43 @@ function handleLogout() {
 // ---------- Дашборд ----------
 
 function renderDashboard() {
-  const editing = state.editingSlug !== null;
-  const editingPattern = editing ? state.patterns.find((p) => p.slug === state.editingSlug) : null;
-
   root.innerHTML = `
     <div class="admin-topbar">
       <h1>DinaStyleKnits Admin</h1>
       <button class="btn btn-outline" id="logout-btn">Log out</button>
     </div>
     <div class="admin-container">
+      <div class="admin-tabs">
+        <button class="admin-tab ${state.activeTab === "patterns" ? "is-active" : ""}" id="tab-patterns" type="button">Patterns</button>
+        <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${state.subscribers.length})</button>
+      </div>
+      <div id="tab-content"></div>
+    </div>
+  `;
+
+  document.getElementById("logout-btn").addEventListener("click", handleLogout);
+  document.getElementById("tab-patterns").addEventListener("click", () => {
+    state.activeTab = "patterns";
+    renderDashboard();
+  });
+  document.getElementById("tab-subscribers").addEventListener("click", () => {
+    state.activeTab = "subscribers";
+    renderDashboard();
+  });
+
+  if (state.activeTab === "subscribers") {
+    renderSubscribersTab();
+  } else {
+    renderPatternsTab();
+  }
+}
+
+function renderPatternsTab() {
+  const editing = state.editingSlug !== null;
+  const editingPattern = editing ? state.patterns.find((p) => p.slug === state.editingSlug) : null;
+  const mount = document.getElementById("tab-content");
+
+  mount.innerHTML = `
       <h2 class="admin-section-title">${editing ? "Edit pattern" : "Add new pattern"}</h2>
       <form class="admin-form" id="pattern-form">
         <div class="admin-field">
@@ -138,10 +172,8 @@ function renderDashboard() {
       <div class="admin-list" id="patterns-list">
         ${state.patterns.map(renderListItem).join("") || "<p>No patterns yet.</p>"}
       </div>
-    </div>
   `;
 
-  document.getElementById("logout-btn").addEventListener("click", handleLogout);
   document.getElementById("pattern-form").addEventListener("submit", handleFormSubmit);
   if (editing) {
     document.getElementById("cancel-edit-btn").addEventListener("click", () => {
@@ -162,6 +194,54 @@ function renderDashboard() {
     });
     deleteBtn?.addEventListener("click", () => handleDelete(pattern));
   });
+}
+
+function renderSubscribersTab() {
+  const mount = document.getElementById("tab-content");
+
+  mount.innerHTML = `
+      <div class="admin-subscribers-header">
+        <h2 class="admin-section-title" style="margin-top: 0;">Subscribers (${state.subscribers.length})</h2>
+        <button class="btn btn-outline" id="export-csv-btn" type="button" ${state.subscribers.length ? "" : "disabled"}>Export CSV</button>
+      </div>
+      <div class="admin-list">
+        ${
+          state.subscribers.length
+            ? state.subscribers.map(renderSubscriberItem).join("")
+            : "<p>No subscribers yet — they'll show up here as soon as someone joins on the homepage.</p>"
+        }
+      </div>
+  `;
+
+  document.getElementById("export-csv-btn")?.addEventListener("click", exportSubscribersCsv);
+}
+
+function renderSubscriberItem(subscriber) {
+  const date = new Date(subscriber.created_at).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  return `
+    <div class="admin-list-item">
+      <div class="admin-list-item__info">
+        <p class="admin-list-item__title">${escapeHtml(subscriber.email)}</p>
+        <p class="admin-list-item__price">Joined ${date}</p>
+      </div>
+    </div>
+  `;
+}
+
+function exportSubscribersCsv() {
+  const rows = [["email", "joined_at"], ...state.subscribers.map((s) => [s.email, s.created_at])];
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "dinastyleknits-subscribers.csv";
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function renderListItem(pattern) {

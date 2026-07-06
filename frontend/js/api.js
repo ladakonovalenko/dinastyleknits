@@ -113,4 +113,12 @@ const Api = {
     }
     return res.json();
   },
+
+  async getSubscribers(token) {
+    const res = await fetch(`${API_BASE_URL}/api/subscribers`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to load subscribers");
+    return res.json();
+  },
 };
