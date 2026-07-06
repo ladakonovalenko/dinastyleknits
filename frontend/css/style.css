@@ -194,7 +194,7 @@ input:focus-visible {
 /* ================= HERO ================= */
 
 .hero {
-  padding: var(--space-4) 0 var(--space-6);
+  padding: var(--space-4) 0 var(--space-2);
 }
 
 .hero__inner {
@@ -235,7 +235,7 @@ input:focus-visible {
 }
 
 .hero__image {
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 1 / 1;
   background: var(--color-gray-100);
   border-radius: var(--radius);
   overflow: hidden;
@@ -250,7 +250,7 @@ input:focus-visible {
 .scroll-cue {
   display: flex;
   justify-content: center;
-  margin-top: var(--space-6);
+  margin-top: var(--space-1);
 }
 
 .scroll-cue a {
@@ -267,6 +267,12 @@ input:focus-visible {
 
 .section {
   padding: var(--space-8) 0;
+}
+
+/* Секція одразу під hero — верхній відступ менший, бо hero вже має власний
+   нижній відступ; без цього між блоками лишається забагато порожнього місця */
+#all-patterns {
+  padding-top: var(--space-3);
 }
 
 .section--muted {
