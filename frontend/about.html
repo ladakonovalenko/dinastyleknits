@@ -4,24 +4,117 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About — DinaStyleKnits</title>
+  <meta name="description" content="Handmade scarves, hats, shawls, gloves, jewelry and home decor by DinaStyleKnits — on Etsy since 2014." />
   <link rel="icon" href="static/images/emblem.png" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/about.css" />
 </head>
 <body data-page="about">
 
   <header class="site-header" id="site-header"></header>
 
   <main>
-    <div class="container stub-page">
-      <h1>About DinaStyleKnits</h1>
-      <p>
-        Welcome to DinaStyleKnits, where handmade knitted accessories meet
-        thoughtful, easy-to-follow design — cozy, wearable patterns since 2014.
-      </p>
-      <p style="margin-top: 32px;">
+    <section class="section about-intro">
+      <div class="container">
+        <p class="hero__eyebrow-standalone">On Etsy since 2014 · 1,536 sales</p>
+        <h1 class="about-title">About DinaStyleKnits</h1>
+        <p class="about-subtitle">Handmade scarves, hats, shawls, gloves, jewelry and home decor</p>
+      </div>
+    </section>
+
+    <section class="section section--muted">
+      <div class="container">
+        <div class="about-carousel" id="about-carousel">
+          <button class="about-carousel__arrow about-carousel__arrow--prev" id="carousel-prev" aria-label="Previous photo">&#8249;</button>
+          <div class="about-carousel__viewport">
+            <img class="about-carousel__image" id="carousel-image" src="" alt="" />
+          </div>
+          <button class="about-carousel__arrow about-carousel__arrow--next" id="carousel-next" aria-label="Next photo">&#8250;</button>
+        </div>
+        <p class="about-carousel__caption" id="carousel-caption"></p>
+        <div class="about-carousel__dots" id="carousel-dots"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container about-story">
+        <div class="about-story__avatar">
+          <div class="about-gallery__placeholder about-story__avatar-placeholder">Photo needed</div>
+        </div>
+        <div class="about-story__text">
+          <p>
+            Welcome to DinaStyleKnits, where handmade knitted accessories meet coastal
+            inspiration. With a childhood spent near the sea in an industrial Ukrainian
+            city, my creative spirit was ignited from an early age. Guided by my
+            craftswoman mother, I learned the art of knitting and sewing, which remained
+            cherished hobbies throughout my life.
+          </p>
+          <p>
+            When my daughter was born, I found more time to dedicate to knitting, and it
+            soon became a profession that allowed me to combine my love for handmade
+            creations with my family responsibilities. In 2011, I took a leap and sold my
+            first knitted hats and scarves under the name Dina-style. The positive
+            response and growing passion led me to open my Etsy shop in 2014, where I
+            have had the pleasure of connecting with the vibrant creative community.
+          </p>
+          <p>
+            At DinaStyleKnits, each hand-knitted accessory is made with utmost care and
+            attention to detail. I take pride in using only quality yarn and creating my
+            own designs, ensuring that every piece is unique and made in limited
+            numbers. Customer satisfaction is my priority, and I strive to provide
+            exceptional service to each valued client. Beyond knitting and sewing, I
+            embrace a holistic lifestyle and find inspiration in practices like yoga and
+            Chinese qigong, infusing a sense of balance and harmony into my creations.
+          </p>
+          <p>
+            Thank you for visiting DinaStyleKnits, where you can discover beautiful and
+            exclusive handmade accessories that reflect my coastal roots and passion for
+            craftsmanship.
+          </p>
+          <p class="about-story__signature">
+            Welcome to my shop :)<br />
+            Dina<br />
+            DinaStyleKnits
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--muted">
+      <div class="container">
+        <h2 class="section__title" style="margin-bottom: var(--space-4);">Shop members</h2>
+        <div class="about-team">
+          <div class="about-team__member">
+            <div class="about-gallery__placeholder about-team__avatar-placeholder">Photo needed</div>
+            <p class="about-team__name">Dina StyleKnit</p>
+            <p class="about-team__role">Owner, Creator, Maker</p>
+            <p class="about-team__bio">
+              I'm Dina, the creative force behind DinaStyleKnits. With a passion for
+              knitting, I handcraft unique and stylish accessories, bringing warmth and
+              style to fashion-conscious individuals who appreciate the art of handmade
+              creations.
+            </p>
+          </div>
+          <div class="about-team__member">
+            <div class="about-gallery__placeholder about-team__avatar-placeholder">Photo needed</div>
+            <p class="about-team__name">Lada</p>
+            <p class="about-team__role">Assistant, Model, SMM Manager</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container" style="text-align: center;">
+        <p style="color: var(--color-gray-500); margin-bottom: var(--space-2);">Follow along</p>
+        <ul class="social-links" style="justify-content: center; margin: 0 auto var(--space-4);">
+          <li><a href="https://www.facebook.com/pages/Dinastyleknits/1541734096057441" target="_blank" rel="noopener" aria-label="Facebook"><img src="static/images/facebook-icon.png" alt="" class="social-icon-img" /></a></li>
+          <li><a href="http://instagram.com/dina.style" target="_blank" rel="noopener" aria-label="Instagram"><img src="static/images/instagram-icon.png" alt="" class="social-icon-img" /></a></li>
+          <li><a href="https://www.pinterest.com/dinastyleknits/" target="_blank" rel="noopener" aria-label="Pinterest"><img src="static/images/pinterest-icon.png" alt="" class="social-icon-img" /></a></li>
+        </ul>
         <a class="btn btn-primary" href="index.html#all-patterns">Browse patterns</a>
-      </p>
-    </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer" id="site-footer"></footer>
@@ -29,5 +122,6 @@
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/about.js"></script>
 </body>
 </html>
