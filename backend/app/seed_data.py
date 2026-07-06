@@ -24,91 +24,91 @@ from .routers.patterns import slugify
 PATTERNS = [
     {
         "title": "Easy Knit Poncho Pattern: Beginner Women's Capelet",
-        "price": "$5.65",
+        "price": "USD 6.78",
         "image_filename": "easy-knit-poncho-beginner-capelet.jpg",
         "etsy_url": "https://www.etsy.com/listing/294453691",
         "is_new": False,
     },
     {
         "title": "Easy Knit Shawl Pattern: Triangle Chunky Leaves Design",
-        "price": "$5.69",
+        "price": "USD 6.83",
         "image_filename": "easy-knit-shawl-triangle-chunky-leaves.jpg",
         "etsy_url": "https://www.etsy.com/listing/1038256635",
         "is_new": True,
     },
     {
         "title": "Crochet Cape Capelet Pattern: Easy Poncho Shawl",
-        "price": "$5.90",
+        "price": "USD 7.08",
         "image_filename": "crochet-cape-capelet-easy-poncho-shawl.jpg",
         "etsy_url": "https://www.etsy.com/listing/472046848",
         "is_new": False,
     },
     {
         "title": "Love Latte Poncho Capelet Knitting Pattern: Easy Beginner Shawl",
-        "price": "$5.60",
+        "price": "USD 6.72",
         "image_filename": "love-latte-poncho-capelet-beginner-shawl.jpg",
         "etsy_url": "https://www.etsy.com/listing/246923530",
         "is_new": False,
     },
     {
         "title": "Easy Knitted Ruffled Shawl Pattern: Beginner DIY",
-        "price": "$5.68",
+        "price": "USD 6.82",
         "image_filename": "easy-knitted-ruffled-shawl-beginner-diy.jpg",
         "etsy_url": "https://www.etsy.com/listing/659222676",
         "is_new": False,
     },
     {
         "title": "Easy Fingerless Gloves Knitting Pattern (Striped)",
-        "price": "$5.30",
+        "price": "USD 6.36",
         "image_filename": "easy-fingerless-gloves-striped.jpg",
         "etsy_url": "https://www.etsy.com/listing/561657550",
         "is_new": True,
     },
     {
         "title": "Easy Knit Shawl Pattern: Chunky Triangle Wrap",
-        "price": "$5.68",
+        "price": "USD 6.82",
         "image_filename": "easy-knit-shawl-chunky-triangle-wrap.jpg",
         "etsy_url": "https://www.etsy.com/listing/209239231",
         "is_new": False,
     },
     {
         "title": "Granny Square Crochet Bag Pattern: Daisy Flower Tote",
-        "price": "$4.99",
+        "price": "USD 5.99",
         "image_filename": "granny-square-crochet-bag-daisy-flower-tote.jpg",
         "etsy_url": "https://www.etsy.com/listing/525541097",
         "is_new": False,
     },
     {
         "title": "Easy Knit Triangle Shawl Pattern with Long Sides (Shawlette)",
-        "price": "$4.99",
+        "price": "USD 5.99",
         "image_filename": "easy-knit-triangle-shawl-shawlette.jpg",
         "etsy_url": "https://www.etsy.com/listing/279140232",
         "is_new": False,
     },
     {
         "title": "Easy Knitting Pattern: Women's Mohair Yoke Poncho",
-        "price": "$5.99",
+        "price": "USD 7.19",
         "image_filename": "easy-knitting-mohair-yoke-poncho.jpg",
         "etsy_url": "https://www.etsy.com/listing/267470137",
         "is_new": True,
     },
     {
         "title": "Knitted Triangle Shawl Pattern: Ruffled Lace Border",
-        "price": "$5.48",
+        "price": "USD 6.58",
         "image_filename": "knitted-triangle-shawl-ruffled-lace-border.jpg",
         "etsy_url": "https://www.etsy.com/listing/501241416",
         "is_new": False,
     },
     {
         "title": "Crochet Mesh Cape Pattern, Easy Capelet Poncho Shawl",
-        "price": "$5.69",
+        "price": "USD 6.83",
         "image_filename": "crochet-mesh-cape-easy-capelet-poncho.jpg",
         "etsy_url": "https://www.etsy.com/listing/558361392",
         "is_new": False,
     },
     {
         "title": "Evil Eye Granny Square Crochet Tote Bag Pattern",
-        "price": "$4.99",
+        "price": "USD 5.99",
         "image_filename": "evil-eye-granny-square-crochet-tote-bag.jpg",
         "etsy_url": "https://www.etsy.com/listing/539074989",
         "is_new": False,
@@ -123,14 +123,26 @@ def seed():
     db = SessionLocal()
     try:
         created_count = 0
+        updated_count = 0
         for item in PATTERNS:
             slug = slugify(item["title"])
-            if db.query(models.Pattern).filter(models.Pattern.slug == slug).first():
-                continue  # вже є — не дублюємо (ідемпотентність)
+            existing = db.query(models.Pattern).filter(models.Pattern.slug == slug).first()
+            if existing:
+                # Патерн уже є в базі — оновлюємо лише "джерельні" поля з Etsy
+                # (ціна/назва/посилання можуть змінюватись на самому Etsy).
+                # НЕ чіпаємо image_filename/description/is_new/sort_order —
+                # це поля, які згодом редагуватимуться вручну через адмінку,
+                # і повторний запуск seed не повинен їх затирати.
+                if existing.price != item["price"]:
+                    existing.price = item["price"]
+                    updated_count += 1
+                existing.title = item["title"]
+                existing.etsy_url = item["etsy_url"]
+                continue
             db.add(models.Pattern(slug=slug, **item))
             created_count += 1
         db.commit()
-        print(f"[seed] додано {created_count} нових патернів (з {len(PATTERNS)} у списку)")
+        print(f"[seed] додано {created_count} нових, оновлено ціну в {updated_count} патернів (з {len(PATTERNS)} у списку)")
 
         if not db.query(models.AdminUser).filter(models.AdminUser.email == ADMIN_EMAIL).first():
             db.add(models.AdminUser(email=ADMIN_EMAIL, hashed_password=hash_password(ADMIN_PASSWORD)))
