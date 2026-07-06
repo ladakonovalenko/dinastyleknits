@@ -1,0 +1,7 @@
+# Дозволити пошуковикам індексувати весь публічний сайт,
+# але не адмінку (їй нема чого робити у видачі Google).
+User-agent: *
+Disallow: /admin.html
+Allow: /
+
+Sitemap: https://dinastyleknits.vercel.app/sitemap.xml
