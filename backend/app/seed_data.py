@@ -128,21 +128,27 @@ def seed():
             slug = slugify(item["title"])
             existing = db.query(models.Pattern).filter(models.Pattern.slug == slug).first()
             if existing:
-                # Патерн уже є в базі — оновлюємо лише "джерельні" поля з Etsy
-                # (ціна/назва/посилання можуть змінюватись на самому Etsy).
-                # НЕ чіпаємо image_filename/description/is_new/sort_order —
-                # це поля, які згодом редагуватимуться вручну через адмінку,
-                # і повторний запуск seed не повинен їх затирати.
-                if existing.price != item["price"]:
-                    existing.price = item["price"]
-                    updated_count += 1
-                existing.title = item["title"]
-                existing.etsy_url = item["etsy_url"]
+                # Патерн уже є в базі — НІЧОГО не чіпаємо.
+                #
+                # ⚠️ РАНІШЕ тут оновлювались price/title/etsy_url при кожному
+                # запуску seed(). Це виглядало безпечно на перший погляд, але
+                # мало серйозний побічний ефект: Render перезапускає процес
+                # (а разом з ним і seed(), бо він у Start Command) не тільки
+                # при деплої, а й щоразу, коли безкоштовний сервіс "прокидається"
+                # після сну (~15 хв бездіяльності) — тобто набагато частіше, ніж
+                # здається. Через це будь-яка ручна правка назви/ціни/посилання
+                # через адмінку для одного з цих 13 базових товарів тихо
+                # затиралась назад на "зашите" в цьому файлі значення після
+                # першого ж "пробудження" сервера.
+                #
+                # Тепер seed лише СТВОРЮЄ відсутні патерни. Якщо ціна на Etsy
+                # зміниться знову — оновлюйте її вручну через адмінку (Edit →
+                # Price → Save), а не тут.
                 continue
             db.add(models.Pattern(slug=slug, **item))
             created_count += 1
         db.commit()
-        print(f"[seed] додано {created_count} нових, оновлено ціну в {updated_count} патернів (з {len(PATTERNS)} у списку)")
+        print(f"[seed] додано {created_count} нових патернів (з {len(PATTERNS)} у списку)")
 
         if not db.query(models.AdminUser).filter(models.AdminUser.email == ADMIN_EMAIL).first():
             db.add(models.AdminUser(email=ADMIN_EMAIL, hashed_password=hash_password(ADMIN_PASSWORD)))
