@@ -1,15 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..auth import create_access_token, get_current_admin, verify_password
 from ..database import get_db
+from ..limiter import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=schemas.TokenResponse)
-def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     admin = db.query(models.AdminUser).filter(models.AdminUser.email == payload.email).first()
     if admin is None or not verify_password(payload.password, admin.hashed_password):
         raise HTTPException(

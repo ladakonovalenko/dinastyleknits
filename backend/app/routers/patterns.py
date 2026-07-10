@@ -1,7 +1,9 @@
 import re
 import unicodedata
+from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -10,7 +12,7 @@ from ..database import get_db
 
 router = APIRouter(prefix="/api/patterns", tags=["patterns"])
 
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}  # реальний формат файлу (Pillow), не Content-Type від клієнта
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB — достатньо з запасом для фото 1024x1024
 
 
@@ -117,15 +119,26 @@ async def upload_pattern_image(
     if pattern is None:
         raise HTTPException(status_code=404, detail="Патерн не знайдено")
 
-    if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="Дозволені формати: JPEG, PNG, WebP")
-
     content = await file.read()
     if len(content) > MAX_IMAGE_SIZE:
         raise HTTPException(status_code=400, detail="Файл завеликий (максимум 5MB)")
 
+    # Не довіряємо Content-Type від клієнта (його легко підмінити) —
+    # відкриваємо файл через Pillow і перевіряємо, що це справді коректне
+    # зображення дозволеного формату. verify() перевіряє цілісність файлу,
+    # але "закриває" об'єкт — тому формат читаємо окремим повторним open().
+    try:
+        Image.open(BytesIO(content)).verify()
+        detected_format = Image.open(BytesIO(content)).format
+    except (UnidentifiedImageError, OSError):
+        raise HTTPException(status_code=400, detail="Файл пошкоджений або не є зображенням")
+
+    if detected_format not in ALLOWED_IMAGE_FORMATS:
+        raise HTTPException(status_code=400, detail="Дозволені формати: JPEG, PNG, WebP")
+
+    content_type_map = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
     pattern.image_data = content
-    pattern.image_content_type = file.content_type
+    pattern.image_content_type = content_type_map[detected_format]
     db.commit()
     db.refresh(pattern)
     return pattern
