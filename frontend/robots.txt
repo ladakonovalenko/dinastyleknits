@@ -4,4 +4,4 @@ User-agent: *
 Disallow: /admin.html
 Allow: /
 
-Sitemap: https://dinastyleknits.vercel.app/sitemap.xml
+Sitemap: https://dinastyleknits.com/v2/sitemap.xml
