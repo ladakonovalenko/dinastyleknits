@@ -1,0 +1,12 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/lcomtop
+    # ---- Frontend → dinastyleknits.com/v2 ----
+    - /bin/cp -R frontend/. $DEPLOYPATH/dinastyleknits.com/
+    # ---- Backend → dina/backend ----
+    - /bin/cp -R backend/. $DEPLOYPATH/dina/backend/
+    # ---- Оновити залежності (через pip з venv застосунку) ----
+    - /home/lcomtop/virtualenv/dina/backend/3.11/bin/pip install -r $DEPLOYPATH/dina/backend/requirements.txt
+    # ---- Перезапустити Passenger ----
+    - /bin/mkdir -p $DEPLOYPATH/dina/backend/tmp
+    - /bin/touch $DEPLOYPATH/dina/backend/tmp/restart.txt
