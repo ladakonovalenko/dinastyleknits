@@ -54,7 +54,7 @@ function renderHeader() {
   mount.innerHTML = `
     <div class="site-header__inner">
       <a href="index.html" class="brand">
-        <img src="static/images/emblem.png" alt="" />
+        <img src="static/images/emblem.jpg" alt="" />
         DinaStyleKnits
       </a>
       <p class="header-tagline">Knitting &amp; Crochet Patterns · Since 2014</p>

@@ -13,7 +13,8 @@ from ..database import get_db
 router = APIRouter(prefix="/api/patterns", tags=["patterns"])
 
 ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}  # реальний формат файлу (Pillow), не Content-Type від клієнта
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB — достатньо з запасом для фото 1024x1024
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB — ліміт на початковий файл ДО стиснення
+MAX_IMAGE_DIMENSION = 900  # px по довшій стороні — фото на сайті показуються в блоці ~450px
 
 
 def slugify(title: str) -> str:
@@ -136,8 +137,27 @@ async def upload_pattern_image(
     if detected_format not in ALLOWED_IMAGE_FORMATS:
         raise HTTPException(status_code=400, detail="Дозволені формати: JPEG, PNG, WebP")
 
+    # Автоматично зменшуємо/стискаємо фото перед збереженням — незалежно від
+    # того, яким важким і якого розміру завантажили оригінал (наприклад,
+    # необроблене фото з телефону в кілька МБ). Показ на сайті все одно
+    # відбувається в невеликому блоці (макс. ~450px), тож 900px по довшій
+    # стороні з запасом покриває навіть екрани з подвійною щільністю пікселів.
+    img_for_save = Image.open(BytesIO(content))
+    if img_for_save.mode in ("RGBA", "P") and detected_format == "JPEG":
+        img_for_save = img_for_save.convert("RGB")
+    w, h = img_for_save.size
+    if max(w, h) > MAX_IMAGE_DIMENSION:
+        ratio = MAX_IMAGE_DIMENSION / max(w, h)
+        img_for_save = img_for_save.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+
+    buffer = BytesIO()
+    save_format = "JPEG" if detected_format == "JPEG" else detected_format
+    save_kwargs = {"quality": 82, "optimize": True} if save_format == "JPEG" else {"optimize": True}
+    img_for_save.save(buffer, format=save_format, **save_kwargs)
+    compressed_content = buffer.getvalue()
+
     content_type_map = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
-    pattern.image_data = content
+    pattern.image_data = compressed_content
     pattern.image_content_type = content_type_map[detected_format]
     db.commit()
     db.refresh(pattern)
