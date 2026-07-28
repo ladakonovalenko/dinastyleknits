@@ -9,7 +9,7 @@ from .config import ALLOWED_ORIGINS
 from .database import Base, engine
 from .limiter import limiter
 from .migrations import run_auto_migrations
-from .routers import auth_router, patterns, subscribers
+from .routers import auth_router, newsletter, patterns, subscribers
 
 app = FastAPI(title="DinaStyleKnits API", version="0.1.0")
 app.state.limiter = limiter
@@ -59,6 +59,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(patterns.router)
 app.include_router(subscribers.router)
 app.include_router(auth_router.router)
+app.include_router(newsletter.router)
 
 
 @app.get("/api/health")

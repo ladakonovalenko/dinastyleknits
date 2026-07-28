@@ -121,4 +121,17 @@ const Api = {
     if (!res.ok) throw new Error("Failed to load subscribers");
     return res.json();
   },
+
+  async sendNewsletter(token, { subject, body }) {
+    const res = await fetch(`${API_BASE_URL}/api/newsletter/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ subject, body }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to send newsletter");
+    }
+    return res.json();
+  },
 };

@@ -10,9 +10,10 @@ let state = {
   token: localStorage.getItem(TOKEN_KEY) || null,
   patterns: [],
   subscribers: [],
-  activeTab: "patterns", // "patterns" | "subscribers"
+  activeTab: "patterns", // "patterns" | "subscribers" | "newsletter"
   editingSlug: null, // null = форма "додати новий", інакше — slug патерну, який редагується
   formError: "",
+  newsletterStatus: "", // повідомлення після спроби відправки (успіх/помилка)
 };
 
 const root = document.getElementById("admin-root");
@@ -107,6 +108,7 @@ function renderDashboard() {
       <div class="admin-tabs">
         <button class="admin-tab ${state.activeTab === "patterns" ? "is-active" : ""}" id="tab-patterns" type="button">Patterns</button>
         <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${state.subscribers.length})</button>
+        <button class="admin-tab ${state.activeTab === "newsletter" ? "is-active" : ""}" id="tab-newsletter" type="button">Newsletter</button>
       </div>
       <div id="tab-content"></div>
     </div>
@@ -121,9 +123,15 @@ function renderDashboard() {
     state.activeTab = "subscribers";
     renderDashboard();
   });
+  document.getElementById("tab-newsletter").addEventListener("click", () => {
+    state.activeTab = "newsletter";
+    renderDashboard();
+  });
 
   if (state.activeTab === "subscribers") {
     renderSubscribersTab();
+  } else if (state.activeTab === "newsletter") {
+    renderNewsletterTab();
   } else {
     renderPatternsTab();
   }
@@ -261,6 +269,58 @@ function renderListItem(pattern) {
       </div>
     </div>
   `;
+}
+
+function renderNewsletterTab() {
+  const mount = document.getElementById("tab-content");
+
+  mount.innerHTML = `
+      <h2 class="admin-section-title" style="margin-top: 0;">Send newsletter</h2>
+      <p style="color: var(--color-gray-500); margin-top: -8px;">
+        Goes out to all ${state.subscribers.length} subscriber${state.subscribers.length === 1 ? "" : "s"} who joined via the homepage form.
+      </p>
+      <form class="admin-form" id="newsletter-form">
+        <div class="admin-field">
+          <label for="newsletter-subject">Subject</label>
+          <input type="text" id="newsletter-subject" required placeholder="New patterns are here!" />
+        </div>
+        <div class="admin-field">
+          <label for="newsletter-body">Message</label>
+          <textarea id="newsletter-body" required rows="8" placeholder="Write your update here. Leave a blank line between paragraphs."></textarea>
+        </div>
+        <p class="admin-message ${state.newsletterStatus.startsWith("Error") ? "is-error" : state.newsletterStatus ? "is-success" : ""}">${escapeHtml(state.newsletterStatus)}</p>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn btn-primary" id="newsletter-send-btn">Send to all subscribers</button>
+        </div>
+      </form>
+  `;
+
+  document.getElementById("newsletter-form").addEventListener("submit", handleNewsletterSubmit);
+}
+
+async function handleNewsletterSubmit(event) {
+  event.preventDefault();
+  state.newsletterStatus = "";
+
+  const subject = document.getElementById("newsletter-subject").value.trim();
+  const body = document.getElementById("newsletter-body").value.trim();
+
+  const confirmed = window.confirm(
+    `Send this email to all ${state.subscribers.length} subscriber(s) right now? This cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  const sendBtn = document.getElementById("newsletter-send-btn");
+  sendBtn.disabled = true;
+  sendBtn.textContent = "Sending…";
+
+  try {
+    await Api.sendNewsletter(state.token, { subject, body });
+    state.newsletterStatus = "Sent! Your subscribers should start receiving it shortly.";
+  } catch (err) {
+    state.newsletterStatus = `Error: ${err.message || "Something went wrong."}`;
+  }
+  renderNewsletterTab();
 }
 
 // ---------- Форма: створення/редагування ----------
