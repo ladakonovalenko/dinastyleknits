@@ -14,6 +14,7 @@ let state = {
   editingSlug: null, // null = форма "додати новий", інакше — slug патерну, який редагується
   formError: "",
   newsletterStatus: "", // повідомлення після спроби відправки (успіх/помилка)
+  syncStatus: "", // повідомлення після спроби синхронізації підписників
 };
 
 const root = document.getElementById("admin-root");
@@ -275,7 +276,18 @@ function renderNewsletterTab() {
   const mount = document.getElementById("tab-content");
 
   mount.innerHTML = `
-      <h2 class="admin-section-title" style="margin-top: 0;">Send newsletter</h2>
+      <div class="admin-subscribers-header">
+        <div>
+          <h2 class="admin-section-title" style="margin-top: 0;">Sync subscribers to Resend</h2>
+          <p style="color: var(--color-gray-500); margin-top: -8px;">
+            Run this if someone subscribed but doesn't show up in Resend yet (e.g. after fixing Resend settings).
+          </p>
+        </div>
+        <button class="btn btn-outline" id="sync-subscribers-btn" type="button">Sync now</button>
+      </div>
+      <p class="admin-message ${state.syncStatus && state.syncStatus.startsWith("Error") ? "is-error" : state.syncStatus ? "is-success" : ""}">${escapeHtml(state.syncStatus || "")}</p>
+
+      <h2 class="admin-section-title">Send newsletter</h2>
       <p style="color: var(--color-gray-500); margin-top: -8px;">
         Goes out to all ${state.subscribers.length} subscriber${state.subscribers.length === 1 ? "" : "s"} who joined via the homepage form.
       </p>
@@ -296,6 +308,23 @@ function renderNewsletterTab() {
   `;
 
   document.getElementById("newsletter-form").addEventListener("submit", handleNewsletterSubmit);
+  document.getElementById("sync-subscribers-btn").addEventListener("click", handleSyncSubscribers);
+}
+
+async function handleSyncSubscribers() {
+  const btn = document.getElementById("sync-subscribers-btn");
+  btn.disabled = true;
+  btn.textContent = "Syncing…";
+  state.syncStatus = "";
+  try {
+    const result = await Api.syncSubscribersToResend(state.token);
+    state.syncStatus = `Synced ${result.synced} of ${result.total_in_db} subscriber(s) to Resend.${
+      result.failed.length ? ` ${result.failed.length} failed.` : ""
+    }`;
+  } catch (err) {
+    state.syncStatus = `Error: ${err.message || "Something went wrong."}`;
+  }
+  renderNewsletterTab();
 }
 
 async function handleNewsletterSubmit(event) {

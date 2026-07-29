@@ -134,4 +134,16 @@ const Api = {
     }
     return res.json();
   },
+
+  async syncSubscribersToResend(token) {
+    const res = await fetch(`${API_BASE_URL}/api/newsletter/sync-subscribers`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to sync subscribers");
+    }
+    return res.json();
+  },
 };

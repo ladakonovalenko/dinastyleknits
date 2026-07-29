@@ -12,10 +12,12 @@ import os
 import resend
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from .. import models
 from ..auth import get_current_admin
 from ..config import FROM_EMAIL, RESEND_API_KEY, RESEND_AUDIENCE_ID
+from ..database import get_db
 
 router = APIRouter(prefix="/api/newsletter", tags=["newsletter"])
 
@@ -72,6 +74,42 @@ def newsletter_status(_admin: models.AdminUser = Depends(get_current_admin)):
         "from_email": FROM_EMAIL,
         "matching_env_var_names": matching_keys,
     }
+
+
+@router.post("/sync-subscribers")
+def sync_subscribers_to_resend(
+    db: Session = Depends(get_db),
+    _admin: models.AdminUser = Depends(get_current_admin),
+):
+    """Одноразове (можна викликати повторно — не зашкодить) довантаження ВСІХ
+    підписників із нашої БД у Resend Audience. Потрібно, бо синхронізація при
+    самій підписці мовчки не спрацьовувала аж до заміни ключа Resend на
+    Full access — усі, хто підписався до цього моменту, у нашій БД є,
+    а в Resend Audience — ні."""
+    if not RESEND_API_KEY or not RESEND_AUDIENCE_ID:
+        raise HTTPException(
+            status_code=400,
+            detail="Resend ще не налаштований (немає RESEND_API_KEY або RESEND_AUDIENCE_ID)",
+        )
+
+    resend.api_key = RESEND_API_KEY
+    subscribers = db.query(models.Subscriber).all()
+    synced = 0
+    failed = []
+    for subscriber in subscribers:
+        try:
+            resend.Contacts.create(
+                {
+                    "audience_id": RESEND_AUDIENCE_ID,
+                    "email": subscriber.email,
+                    "unsubscribed": False,
+                }
+            )
+            synced += 1
+        except Exception as e:
+            failed.append({"email": subscriber.email, "error": str(e)})
+
+    return {"total_in_db": len(subscribers), "synced": synced, "failed": failed}
 
 
 @router.post("/send")
