@@ -4,8 +4,15 @@
 
 Технічно це обгортка над Resend Broadcast API: створюємо Broadcast на той
 самий Audience, куди й так автоматично потрапляють підписники з форми на
-сайті, і одразу відправляємо (параметр "send": True — один запит замість
-двох окремих "створити" + "надіслати").
+сайті, і одразу відправляємо.
+
+⚠️ Навмисно два ОКРЕМІ виклики (create, потім send), а не один запит з
+"send": True — той короткий шлях підтримується лише в resend-python
+2.21.0+, а версія, з якою ми зіткнулись у продакшені, її мовчки
+ігнорувала (розсилка створювалась, але лишалась чернеткою, і жодної
+помилки при цьому не було). Двокроковий варіант — це найстаріший,
+базовий спосіб роботи з Broadcasts API, який підтримується практично
+будь-якою версією бібліотеки.
 """
 import os
 
@@ -125,17 +132,25 @@ def send_newsletter(
 
     resend.api_key = RESEND_API_KEY
     try:
-        result = resend.Broadcasts.create(
+        broadcast = resend.Broadcasts.create(
             {
                 "audience_id": RESEND_AUDIENCE_ID,
                 "from": FROM_EMAIL,
                 "subject": payload.subject,
                 "html": _build_html(payload.body),
                 "name": f"Newsletter: {payload.subject}",
-                "send": True,
             }
         )
+        broadcast_id = broadcast.get("id") if isinstance(broadcast, dict) else getattr(broadcast, "id", None)
+        if not broadcast_id:
+            raise HTTPException(
+                status_code=502,
+                detail="Resend не повернув ID створеної розсилки — не можу її надіслати.",
+            )
+        resend.Broadcasts.send({"broadcast_id": broadcast_id})
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Не вдалось надіслати розсилку через Resend: {e}")
 
-    return {"status": "sent", "broadcast_id": result.get("id") if isinstance(result, dict) else None}
+    return {"status": "sent", "broadcast_id": broadcast_id}
