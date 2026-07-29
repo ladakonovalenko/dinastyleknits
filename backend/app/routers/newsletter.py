@@ -47,6 +47,20 @@ def _build_html(body: str) -> str:
     """
 
 
+@router.get("/status")
+def newsletter_status(_admin: models.AdminUser = Depends(get_current_admin)):
+    """Діагностика: показує, чи бачить ЦЕЙ конкретний запущений процес
+    змінні середовища Resend — без розкриття самих значень. Корисно саме
+    для cPanel/Passenger, де змінні підхоплюються лише при (пере)старті
+    застосунку: якщо їх додали, поки процес уже працював, тут буде видно
+    false, доки застосунок не перезапустять."""
+    return {
+        "resend_api_key_set": bool(RESEND_API_KEY),
+        "resend_audience_id_set": bool(RESEND_AUDIENCE_ID),
+        "from_email": FROM_EMAIL,
+    }
+
+
 @router.post("/send")
 def send_newsletter(
     payload: NewsletterRequest,
