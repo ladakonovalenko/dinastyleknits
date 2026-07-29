@@ -33,9 +33,16 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    # API віддає лише JSON/зображення, а не HTML, що виконується в браузері —
-    # тому CSP тут навмисно суворий (застосунок сам не рендерить нічий контент).
-    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+
+    # /docs, /redoc, /openapi.json — це єдині місця, де застосунок сам віддає
+    # HTML, що виконується в браузері (Swagger/Redoc UI, довантажують свій
+    # JS/CSS з CDN). Суворий CSP нижче їх ламав (біла сторінка) — тому для
+    # решти API (яка віддає лише JSON/зображення) лишаємо суворо, а для
+    # документації — не застосовуємо CSP взагалі.
+    docs_paths = ("/docs", "/redoc", "/openapi.json")
+    if not request.url.path.startswith(docs_paths):
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+
     return response
 
 
