@@ -7,6 +7,8 @@
 сайті, і одразу відправляємо (параметр "send": True — один запит замість
 двох окремих "створити" + "надіслати").
 """
+import os
+
 import resend
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -53,11 +55,22 @@ def newsletter_status(_admin: models.AdminUser = Depends(get_current_admin)):
     змінні середовища Resend — без розкриття самих значень. Корисно саме
     для cPanel/Passenger, де змінні підхоплюються лише при (пере)старті
     застосунку: якщо їх додали, поки процес уже працював, тут буде видно
-    false, доки застосунок не перезапустять."""
+    false, доки застосунок не перезапустять.
+
+    matching_env_var_names — назви (НЕ значення) усіх змінних середовища,
+    де в назві є підрядок "resend" (без урахування регістру). Якщо тут
+    порожній список — змінна з очікуваною назвою взагалі не доходить до
+    процесу (типова причина: додана не в той застосунок на хостингу, або
+    з друкарською помилкою в назві). Якщо список НЕ порожній, але
+    resend_api_key_set/resend_audience_id_set усе одно false — значить,
+    назва трохи відрізняється від очікуваної (RESEND_API_KEY / RESEND_AUDIENCE_ID
+    рівно так, великими літерами, з підкресленням)."""
+    matching_keys = sorted(key for key in os.environ if "resend" in key.lower())
     return {
         "resend_api_key_set": bool(RESEND_API_KEY),
         "resend_audience_id_set": bool(RESEND_AUDIENCE_ID),
         "from_email": FROM_EMAIL,
+        "matching_env_var_names": matching_keys,
     }
 
 
