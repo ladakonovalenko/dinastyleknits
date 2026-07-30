@@ -71,4 +71,4 @@ app.include_router(newsletter.router)
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "allowed_origins": ALLOWED_ORIGINS}
