@@ -27,6 +27,9 @@ COLUMNS_TO_ENSURE = {
         ("youtube_url", "TEXT", None),
         ("is_published", "BOOLEAN", "0"),
     ],
+    "subscribers": [
+        ("unsubscribed", "BOOLEAN", "0"),
+    ],
 }
 
 
