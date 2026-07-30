@@ -34,10 +34,17 @@ COLUMNS_TO_ENSURE = {
 
 
 def run_auto_migrations():
-    inspector = inspect(engine)
-    existing_tables = inspector.get_table_names()
+    """⚠️ Ця функція НІКОЛИ не повинна кидати виняток назовні — вона тепер
+    викликається на рівні імпорту модуля (main.py), тож будь-яка неперехоплена
+    помилка тут зупинила б запуск усього застосунку. Особливо важливо це на
+    хостингу, де одночасно стартує кілька копій процесу (типово для
+    Passenger/cPanel): якщо дві копії одночасно виконують ALTER TABLE для
+    тієї самої колонки, одна з них отримає помилку "колонка вже існує" —
+    це нормально й очікувано, просто пропускаємо конкретну колонку."""
+    try:
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
 
-    with engine.begin() as conn:
         for table, columns in COLUMNS_TO_ENSURE.items():
             if table not in existing_tables:
                 # Таблиці ще немає — Base.metadata.create_all() створить її
@@ -49,7 +56,19 @@ def run_auto_migrations():
                 if column_name in existing_columns:
                     continue
                 default_clause = f" DEFAULT {default}" if default is not None else ""
-                conn.execute(
-                    text(f"ALTER TABLE {table} ADD COLUMN {column_name} {column_type}{default_clause}")
-                )
-                print(f"[migrations] додано колонку {table}.{column_name}")
+                try:
+                    with engine.begin() as conn:
+                        conn.execute(
+                            text(f"ALTER TABLE {table} ADD COLUMN {column_name} {column_type}{default_clause}")
+                        )
+                    print(f"[migrations] додано колонку {table}.{column_name}")
+                except Exception as e:
+                    # Найімовірніша причина — інша копія процесу вже додала цю
+                    # колонку буквально щойно (перегонка при паралельному
+                    # старті кількох воркерів). Це не помилка, яку варто
+                    # зупиняти застосунок — просто логуємо й ідемо далі.
+                    print(f"[migrations] пропущено {table}.{column_name}: {e}")
+    except Exception as e:
+        # Навіть якщо щось пішло геть не так (наприклад, немає з'єднання з
+        # БД на секунду старту) — не валимо запуск застосунку через це.
+        print(f"[migrations] загальна помилка авто-міграції (застосунок все одно запускається): {e}")

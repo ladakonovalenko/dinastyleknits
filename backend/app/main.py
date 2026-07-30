@@ -63,7 +63,11 @@ def _run_startup_tasks():
     Залишаємо той самий виклик і в @app.on_event("startup") нижче —
     для звичайних ASGI-серверів (uvicorn/Render) це просто означає, що
     міграції запускаються (безпечно, ідемпотентно) двічі поспіль."""
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"[startup] create_all: {e}")
+
     run_auto_migrations()
 
     if ALLOWED_ORIGINS == ["*"]:

@@ -8,7 +8,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")  # локально читає backend/.env; на Render змінні задаються в дашборді
+# override=False (це й так значення за замовчуванням, але тут навмисно явно) —
+# якщо змінна вже задана на самому хостингу (Environment Variables у
+# Setup Python App), .env-файл її НЕ перезапише, навіть якщо випадково
+# лишився на сервері зі старими/іншими значеннями. .env потрібен лише
+# для зручності локальної розробки, коли hosting-змінних немає взагалі.
+load_dotenv(BASE_DIR / ".env", override=False)
 
 # --- База даних -------------------------------------------------------------
 # Локально: SQLite-файл поруч з бекендом.
