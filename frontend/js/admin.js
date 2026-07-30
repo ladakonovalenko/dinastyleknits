@@ -108,7 +108,7 @@ function renderDashboard() {
     <div class="admin-container">
       <div class="admin-tabs">
         <button class="admin-tab ${state.activeTab === "patterns" ? "is-active" : ""}" id="tab-patterns" type="button">Patterns</button>
-        <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${activeSubscriberCount()})</button>
+        <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${state.subscribers.length})</button>
         <button class="admin-tab ${state.activeTab === "newsletter" ? "is-active" : ""}" id="tab-newsletter" type="button">Newsletter</button>
       </div>
       <div id="tab-content"></div>
@@ -207,12 +207,10 @@ function renderPatternsTab() {
 
 function renderSubscribersTab() {
   const mount = document.getElementById("tab-content");
-  const active = activeSubscriberCount();
-  const unsubCount = state.subscribers.length - active;
 
   mount.innerHTML = `
       <div class="admin-subscribers-header">
-        <h2 class="admin-section-title" style="margin-top: 0;">Subscribers (${active} active${unsubCount ? `, ${unsubCount} unsubscribed` : ""})</h2>
+        <h2 class="admin-section-title" style="margin-top: 0;">Subscribers (${state.subscribers.length})</h2>
         <button class="btn btn-outline" id="export-csv-btn" type="button" ${state.subscribers.length ? "" : "disabled"}>Export CSV</button>
       </div>
       <div class="admin-list">
@@ -227,10 +225,6 @@ function renderSubscribersTab() {
   document.getElementById("export-csv-btn")?.addEventListener("click", exportSubscribersCsv);
 }
 
-function activeSubscriberCount() {
-  return state.subscribers.filter((s) => !s.unsubscribed).length;
-}
-
 function renderSubscriberItem(subscriber) {
   const date = new Date(subscriber.created_at).toLocaleDateString("en-US", {
     year: "numeric",
@@ -240,7 +234,7 @@ function renderSubscriberItem(subscriber) {
   return `
     <div class="admin-list-item">
       <div class="admin-list-item__info">
-        <p class="admin-list-item__title">${escapeHtml(subscriber.email)}${subscriber.unsubscribed ? ` <span style="color: var(--color-gray-500); font-weight: 400;">(unsubscribed)</span>` : ""}</p>
+        <p class="admin-list-item__title">${escapeHtml(subscriber.email)}</p>
         <p class="admin-list-item__price">Joined ${date}</p>
       </div>
     </div>
@@ -295,7 +289,7 @@ function renderNewsletterTab() {
 
       <h2 class="admin-section-title">Send newsletter</h2>
       <p style="color: var(--color-gray-500); margin-top: -8px;">
-        Goes out to all ${activeSubscriberCount()} active subscriber${activeSubscriberCount() === 1 ? "" : "s"} who joined via the homepage form (unsubscribed contacts are skipped automatically by Resend).
+        Goes out to all ${state.subscribers.length} subscriber${state.subscribers.length === 1 ? "" : "s"} who joined via the homepage form.
       </p>
       <form class="admin-form" id="newsletter-form">
         <div class="admin-field">
@@ -324,12 +318,9 @@ async function handleSyncSubscribers() {
   state.syncStatus = "";
   try {
     const result = await Api.syncSubscribersToResend(state.token);
-    await loadSubscribers(); // підтягнути оновлені unsubscribed-статуси з нашої ж БД
     state.syncStatus =
-      `Pushed ${result.pushed_to_resend} of ${result.total_in_db} to Resend` +
-      (result.push_failed.length ? ` (${result.push_failed.length} failed)` : "") +
-      `. Updated unsubscribe status for ${result.unsubscribe_status_updated} contact(s). ` +
-      `Active subscribers now: ${result.active_subscribers}.`;
+      `Added ${result.added} new subscriber(s) to Resend, ${result.skipped_existing} already there (untouched).` +
+      (result.failed.length ? ` ${result.failed.length} failed.` : "");
   } catch (err) {
     state.syncStatus = `Error: ${err.message || "Something went wrong."}`;
   }
@@ -344,7 +335,7 @@ async function handleNewsletterSubmit(event) {
   const body = document.getElementById("newsletter-body").value.trim();
 
   const confirmed = window.confirm(
-    `Send this email to all ${activeSubscriberCount()} active subscriber(s) right now? This cannot be undone.`
+    `Send this email to all ${state.subscribers.length} subscriber(s) right now? This cannot be undone.`
   );
   if (!confirmed) return;
 

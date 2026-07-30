@@ -88,11 +88,16 @@ def sync_subscribers_to_resend(
     db: Session = Depends(get_db),
     _admin: models.AdminUser = Depends(get_current_admin),
 ):
-    """Одноразове (можна викликати повторно — не зашкодить) довантаження ВСІХ
-    підписників із нашої БД у Resend Audience. Потрібно, бо синхронізація при
-    самій підписці мовчки не спрацьовувала аж до заміни ключа Resend на
-    Full access — усі, хто підписався до цього моменту, у нашій БД є,
-    а в Resend Audience — ні."""
+    """Додає в Resend Audience тих підписників з нашої БД, кого там ще
+    немає. Можна викликати повторно скільки завгодно — безпечно.
+
+    ⚠️ НАВМИСНО ніколи не чіпає статус (unsubscribed) уже існуючих у
+    Resend контактів. Попередня версія цієї функції завжди надсилала
+    "unsubscribed": False для КОЖНОГО підписника при кожному виклику —
+    що на практиці тихо "скасовувало" реальну відписку людини, якщо
+    "Sync Now" натискали вже після того, як вона відписалась. Тепер
+    спершу дізнаємось, хто вже є в Audience, і таких повністю
+    пропускаємо — торкаємось лише тих, кого там справді ще немає."""
     if not RESEND_API_KEY or not RESEND_AUDIENCE_ID:
         raise HTTPException(
             status_code=400,
@@ -100,10 +105,40 @@ def sync_subscribers_to_resend(
         )
 
     resend.api_key = RESEND_API_KEY
+
+    # --- Крок 1: дізнатись, які email вже є в Resend Audience (з пагінацією) ---
+    existing_emails = set()
+    cursor_after = None
+    try:
+        while True:
+            params = {"limit": 100}
+            if cursor_after:
+                params["after"] = cursor_after
+            page = resend.Contacts.list(audience_id=RESEND_AUDIENCE_ID, params=params)
+            data = page.get("data", []) if isinstance(page, dict) else getattr(page, "data", [])
+            for contact in data:
+                email = contact.get("email") if isinstance(contact, dict) else getattr(contact, "email", None)
+                if email:
+                    existing_emails.add(email.lower())
+            has_more = page.get("has_more") if isinstance(page, dict) else getattr(page, "has_more", False)
+            if not has_more or not data:
+                break
+            last = data[-1]
+            cursor_after = last.get("id") if isinstance(last, dict) else getattr(last, "id", None)
+            if not cursor_after:
+                break
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Не вдалось отримати список контактів з Resend: {e}")
+
+    # --- Крок 2: додати лише тих підписників, кого в Resend ще немає ---
     subscribers = db.query(models.Subscriber).all()
-    synced = 0
+    added = 0
+    skipped_existing = 0
     failed = []
     for subscriber in subscribers:
+        if subscriber.email.lower() in existing_emails:
+            skipped_existing += 1
+            continue
         try:
             resend.Contacts.create(
                 {
@@ -112,11 +147,16 @@ def sync_subscribers_to_resend(
                     "unsubscribed": False,
                 }
             )
-            synced += 1
+            added += 1
         except Exception as e:
             failed.append({"email": subscriber.email, "error": str(e)})
 
-    return {"total_in_db": len(subscribers), "synced": synced, "failed": failed}
+    return {
+        "total_in_db": len(subscribers),
+        "added": added,
+        "skipped_existing": skipped_existing,
+        "failed": failed,
+    }
 
 
 @router.post("/send")
