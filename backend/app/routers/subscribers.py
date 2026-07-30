@@ -43,10 +43,56 @@ def subscribe(payload: schemas.SubscriberCreate, db: Session = Depends(get_db)):
     return subscriber
 
 
-@router.get("", response_model=list[schemas.SubscriberOut])
+@router.get("", response_model=list[schemas.SubscriberWithStatus])
 def list_subscribers(
     db: Session = Depends(get_db),
     _admin: models.AdminUser = Depends(get_current_admin),
 ):
-    """Захищений ендпоінт — тільки для замовниці, щоб пізніше експортувати базу."""
-    return db.query(models.Subscriber).order_by(models.Subscriber.created_at.desc()).all()
+    """Захищений ендпоінт — тільки для замовниці, щоб пізніше експортувати базу.
+
+    Якщо Resend налаштований — додатково підтягує ЖИВИЙ статус відписки
+    для кожного email напряму з Resend Audience (не з нашої БД — там цього
+    поля просто немає, і це навмисно, див. коментар у schemas.py). Якщо
+    Resend недоступний чи сталась помилка — просто показуємо список без
+    статусу відписки (усі як unsubscribed=False), нічого не ламаємо."""
+    subscribers = db.query(models.Subscriber).order_by(models.Subscriber.created_at.desc()).all()
+
+    unsubscribed_emails = set()
+    if RESEND_API_KEY and RESEND_AUDIENCE_ID:
+        try:
+            resend.api_key = RESEND_API_KEY
+            cursor_after = None
+            while True:
+                params = {"limit": 100}
+                if cursor_after:
+                    params["after"] = cursor_after
+                page = resend.Contacts.list(audience_id=RESEND_AUDIENCE_ID, params=params)
+                data = page.get("data", []) if isinstance(page, dict) else getattr(page, "data", [])
+                for contact in data:
+                    email = contact.get("email") if isinstance(contact, dict) else getattr(contact, "email", None)
+                    unsub = (
+                        contact.get("unsubscribed")
+                        if isinstance(contact, dict)
+                        else getattr(contact, "unsubscribed", False)
+                    )
+                    if email and unsub:
+                        unsubscribed_emails.add(email.lower())
+                has_more = page.get("has_more") if isinstance(page, dict) else getattr(page, "has_more", False)
+                if not has_more or not data:
+                    break
+                last = data[-1]
+                cursor_after = last.get("id") if isinstance(last, dict) else getattr(last, "id", None)
+                if not cursor_after:
+                    break
+        except Exception as e:
+            print(f"[resend] не вдалось отримати живий статус контактів: {e}")
+
+    return [
+        schemas.SubscriberWithStatus(
+            id=s.id,
+            email=s.email,
+            created_at=s.created_at,
+            unsubscribed=s.email.lower() in unsubscribed_emails,
+        )
+        for s in subscribers
+    ]

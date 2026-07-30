@@ -55,6 +55,21 @@ class SubscriberOut(BaseModel):
     created_at: datetime
 
 
+class SubscriberWithStatus(BaseModel):
+    """Те саме, що SubscriberOut, плюс `unsubscribed` — але це поле НЕ
+    зберігається в базі даних узагалі. Обчислюється "на льоту" в самому
+    ендпоінті, звіряючи email з живим списком контактів у Resend Audience.
+    Свідомий вибір: попередня спроба зберігати цей статус окремою колонкою
+    в БД призвела до серйозних проблем (авто-міграції ненадійно
+    спрацьовують на цьому хостингу) — цей підхід повністю обходить БД,
+    тому такого ризику більше немає."""
+
+    id: int
+    email: str
+    created_at: datetime
+    unsubscribed: bool = False
+
+
 # ---------- Auth ----------
 
 class LoginRequest(BaseModel):
