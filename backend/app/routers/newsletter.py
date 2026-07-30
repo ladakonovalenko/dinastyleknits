@@ -52,7 +52,7 @@ def _build_html(body: str) -> str:
         {paragraphs}
       </div>
       <div style="padding: 16px 24px; color: #8A8A8A; font-size: 12px; text-align: center;">
-        <a href="{{{{RESEND_UNSUBSCRIBE_URL}}}}" style="color: #8A8A8A;">Unsubscribe</a>
+        <a href="{{{{{{RESEND_UNSUBSCRIBE_URL}}}}}}" style="color: #8A8A8A;">Unsubscribe</a>
       </div>
     </div>
     """
