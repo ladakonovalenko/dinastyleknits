@@ -88,18 +88,11 @@ def sync_subscribers_to_resend(
     db: Session = Depends(get_db),
     _admin: models.AdminUser = Depends(get_current_admin),
 ):
-    """Синхронізація в ОБИДВА боки з Resend Audience:
-
-    1. Кожен підписник з нашої БД, якого ще немає в Resend — додається туди
-       (потрібно, бо синхронізація при самій підписці якийсь час мовчки не
-       спрацьовувала, поки не замінили ключ Resend на Full access).
-    2. Статус відписки тягнеться НАЗАД з Resend у нашу БД — бо коли людина
-       натискає "Unsubscribe" в самому листі, це оновлює лише запис у
-       Resend; наша власна БД про цю подію ніяк не дізнається сама (немає
-       налаштованого вебхука), тому без цього кроку лічильник підписників
-       в адмінці ніколи б не зменшувався і розсилка й далі націлювалась
-       би на тих самих людей (хоч Resend і сам не надішле відписаним —
-       але наші власні дані про це нічого не знали б)."""
+    """Одноразове (можна викликати повторно — не зашкодить) довантаження ВСІХ
+    підписників із нашої БД у Resend Audience. Потрібно, бо синхронізація при
+    самій підписці мовчки не спрацьовувала аж до заміни ключа Resend на
+    Full access — усі, хто підписався до цього моменту, у нашій БД є,
+    а в Resend Audience — ні."""
     if not RESEND_API_KEY or not RESEND_AUDIENCE_ID:
         raise HTTPException(
             status_code=400,
@@ -108,67 +101,22 @@ def sync_subscribers_to_resend(
 
     resend.api_key = RESEND_API_KEY
     subscribers = db.query(models.Subscriber).all()
-
-    # --- Крок 1: довантажити в Resend тих, кого там ще немає ---
-    pushed = 0
-    push_failed = []
+    synced = 0
+    failed = []
     for subscriber in subscribers:
         try:
             resend.Contacts.create(
                 {
                     "audience_id": RESEND_AUDIENCE_ID,
                     "email": subscriber.email,
-                    "unsubscribed": subscriber.unsubscribed,
+                    "unsubscribed": False,
                 }
             )
-            pushed += 1
+            synced += 1
         except Exception as e:
-            push_failed.append({"email": subscriber.email, "error": str(e)})
+            failed.append({"email": subscriber.email, "error": str(e)})
 
-    # --- Крок 2: забрати з Resend актуальний статус відписки й оновити нашу БД ---
-    resend_contacts_by_email = {}
-    cursor_after = None
-    try:
-        while True:
-            params = {"limit": 100}
-            if cursor_after:
-                params["after"] = cursor_after
-            page = resend.Contacts.list(audience_id=RESEND_AUDIENCE_ID, params=params)
-            data = page.get("data", []) if isinstance(page, dict) else getattr(page, "data", [])
-            for contact in data:
-                email = contact.get("email") if isinstance(contact, dict) else getattr(contact, "email", None)
-                unsub = (
-                    contact.get("unsubscribed") if isinstance(contact, dict) else getattr(contact, "unsubscribed", False)
-                )
-                if email:
-                    resend_contacts_by_email[email.lower()] = bool(unsub)
-            has_more = page.get("has_more") if isinstance(page, dict) else getattr(page, "has_more", False)
-            if not has_more or not data:
-                break
-            last = data[-1]
-            cursor_after = last.get("id") if isinstance(last, dict) else getattr(last, "id", None)
-            if not cursor_after:
-                break
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Не вдалось отримати список контактів з Resend: {e}")
-
-    updated_unsubscribed = 0
-    for subscriber in subscribers:
-        resend_status = resend_contacts_by_email.get(subscriber.email.lower())
-        if resend_status is not None and resend_status != subscriber.unsubscribed:
-            subscriber.unsubscribed = resend_status
-            updated_unsubscribed += 1
-    db.commit()
-
-    active_count = sum(1 for s in subscribers if not s.unsubscribed)
-
-    return {
-        "total_in_db": len(subscribers),
-        "pushed_to_resend": pushed,
-        "push_failed": push_failed,
-        "unsubscribe_status_updated": updated_unsubscribed,
-        "active_subscribers": active_count,
-    }
+    return {"total_in_db": len(subscribers), "synced": synced, "failed": failed}
 
 
 @router.post("/send")

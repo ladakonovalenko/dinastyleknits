@@ -53,11 +53,6 @@ class Subscriber(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    # Статус відписки, синхронізований із Resend (де людина реально натискає
-    # "Unsubscribe" в листі). Наша власна БД не отримує подій від Resend
-    # автоматично — цей прапорець оновлюється, коли адмінка натискає "Sync"
-    # (тягне поточний статус кожного контакту з Resend Audience).
-    unsubscribed = Column(Boolean, default=False)
 
 
 class AdminUser(Base):

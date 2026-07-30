@@ -53,7 +53,6 @@ class SubscriberOut(BaseModel):
     id: int
     email: str
     created_at: datetime
-    unsubscribed: bool = False
 
 
 # ---------- Auth ----------
