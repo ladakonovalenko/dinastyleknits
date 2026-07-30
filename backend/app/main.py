@@ -46,18 +46,39 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-@app.on_event("startup")
-def on_startup():
-    # Створює таблиці, якщо їх ще немає, і дотягує колонки, яких бракує
-    # в уже існуючих таблицях (легкі авто-міграції, без Alembic).
+def _run_startup_tasks():
+    """Створює таблиці, яких ще немає, і дотягує колонки, яких бракує в уже
+    існуючих таблицях (легкі авто-міграції, без Alembic).
+
+    ⚠️ Це НАВМИСНО викликається одразу тут, на рівні імпорту модуля, а не
+    тільки через @app.on_event("startup") нижче. Причина: на хостингу
+    cPanel/Passenger застосунок запускається через passenger_wsgi.py, який
+    обгортає наш ASGI-застосунок бібліотекою a2wsgi для сумісності з
+    WSGI. Перевірка показала, що a2wsgi обробляє лише окремі HTTP-запити
+    і не запускає ASGI lifespan-подію (startup/shutdown) — тобто
+    @app.on_event("startup") міг узагалі ніколи не виконуватись у
+    продакшені. Виклик тут гарантує, що міграції реально відбудуться
+    (модуль imports виконуються завжди, незалежно від сервера), навіть
+    якщо lifespan-подія на конкретному хостингу не підтримується.
+    Залишаємо той самий виклик і в @app.on_event("startup") нижче —
+    для звичайних ASGI-серверів (uvicorn/Render) це просто означає, що
+    міграції запускаються (безпечно, ідемпотентно) двічі поспіль."""
     Base.metadata.create_all(bind=engine)
     run_auto_migrations()
 
     if ALLOWED_ORIGINS == ["*"]:
         print(
             "[SECURITY WARNING] ALLOWED_ORIGINS = '*' — CORS відкритий для будь-якого "
-            "сайту. Звузьте до реального домену фронтенду в Environment Variables на Render."
+            "сайту. Звузьте до реального домену фронтенду в Environment Variables."
         )
+
+
+_run_startup_tasks()
+
+
+@app.on_event("startup")
+def on_startup():
+    _run_startup_tasks()
 
 
 # Роздача зображень товарів: /static/images/<filename>.jpg
