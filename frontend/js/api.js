@@ -157,4 +157,15 @@ const Api = {
     }
     return res.json();
   },
+
+  async getPatternClickStats(token, period) {
+    const res = await fetch(`${API_BASE_URL}/api/analytics/pattern-clicks?period=${encodeURIComponent(period)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load pattern click stats");
+    }
+    return res.json();
+  },
 };

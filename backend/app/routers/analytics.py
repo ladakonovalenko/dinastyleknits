@@ -28,7 +28,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..analytics_models import PageView
+from ..analytics_models import PageView, PatternClick
 from ..auth import get_current_admin
 from ..config import JWT_SECRET
 from ..database import get_db
@@ -45,6 +45,10 @@ PERIOD_TO_DAYS = {
 
 class TrackRequest(BaseModel):
     path: str
+
+
+class PatternClickRequest(BaseModel):
+    slug: str
 
 
 def _get_client_ip(request: Request) -> str:
@@ -117,3 +121,59 @@ def analytics_summary(
         "total_visitors": total_visitors,
         "daily": daily,
     }
+
+
+@router.post("/pattern-click")
+def track_pattern_click(payload: PatternClickRequest, db: Session = Depends(get_db)):
+    """Публічний ендпоінт — викликається при кліку на картку товару (перехід
+    на Etsy). Ніколи не повинен заважати самому переходу відвідувача,
+    навіть якщо запис у БД не вдався з якоїсь причини."""
+    try:
+        slug = (payload.slug or "").strip()[:255]
+        if slug:
+            db.add(PatternClick(pattern_slug=slug))
+            db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[analytics] не вдалось записати клік по товару: {e}")
+    return {"status": "ok"}
+
+
+@router.get("/pattern-clicks")
+def pattern_click_summary(
+    period: str = "week",
+    db: Session = Depends(get_db),
+    _admin: models.AdminUser = Depends(get_current_admin),
+):
+    if period not in PERIOD_TO_DAYS:
+        raise HTTPException(status_code=400, detail="period має бути одним з: day, week, month, year")
+
+    since = datetime.utcnow() - timedelta(days=PERIOD_TO_DAYS[period])
+
+    rows = (
+        db.query(
+            PatternClick.pattern_slug,
+            func.count(PatternClick.id).label("clicks"),
+        )
+        .filter(PatternClick.created_at >= since)
+        .group_by(PatternClick.pattern_slug)
+        .order_by(func.count(PatternClick.id).desc())
+        .all()
+    )
+
+    # Підтягуємо назви товарів там, де можливо (товар міг бути й видалений
+    # пізніше — тоді просто покажемо його slug замість назви).
+    patterns_by_slug = {p.slug: p for p in db.query(models.Pattern).all()}
+
+    results = []
+    for slug, clicks in rows:
+        pattern = patterns_by_slug.get(slug)
+        results.append(
+            {
+                "slug": slug,
+                "title": pattern.title if pattern else slug,
+                "clicks": clicks,
+            }
+        )
+
+    return {"period": period, "patterns": results}

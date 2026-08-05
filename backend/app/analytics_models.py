@@ -29,8 +29,19 @@ class PageView(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
+class PatternClick(Base):
+    """Клік по картці товару (перехід на Etsy). Зберігаємо лише slug
+    товару й час — жодних даних про відвідувача."""
+
+    __tablename__ = "pattern_clicks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    pattern_slug = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 try:
-    Base.metadata.create_all(bind=engine, tables=[PageView.__table__])
+    Base.metadata.create_all(bind=engine, tables=[PageView.__table__, PatternClick.__table__])
 
     # Якщо таблиця вже існувала з попередньої версії (без visitor_hash) —
     # create_all() її не чіпає (він тільки СТВОРЮЄ таблиці, яких немає, і
@@ -50,4 +61,4 @@ try:
                 # колонку одночасно (кілька воркерів стартують паралельно).
                 print(f"[analytics] пропущено visitor_hash: {e}")
 except Exception as e:
-    print(f"[analytics] не вдалось створити/оновити таблицю page_views: {e}")
+    print(f"[analytics] не вдалось створити/оновити таблиці page_views/pattern_clicks: {e}")

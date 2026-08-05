@@ -11,7 +11,7 @@ function renderPatternCard(pattern) {
   const badge = pattern.is_new ? `<span class="badge-new">New</span>` : "";
 
   return `
-    <a class="pattern-card" href="${pattern.etsy_url}" target="_blank" rel="noopener">
+    <a class="pattern-card" href="${pattern.etsy_url}" target="_blank" rel="noopener" onclick="trackPatternClick('${pattern.slug}')">
       <div class="pattern-card__image">
         ${imageSrc ? `<img src="${imageSrc}" alt="${escapeHtml(pattern.title)}" loading="lazy" />` : ""}
       </div>
@@ -19,6 +19,20 @@ function renderPatternCard(pattern) {
       <p class="pattern-card__price">${escapeHtml(pattern.price)}</p>
     </a>
   `;
+}
+
+// Статистика кліків по товарах (яка картка популярніша) — власна, без
+// сторонніх сервісів. Не затримує й не блокує сам перехід на Etsy: просто
+// тихо "летить" у фоні своїм запитом, поки браузер вже відкриває нову
+// вкладку за посиланням картки.
+function trackPatternClick(slug) {
+  if (typeof API_BASE_URL === "undefined") return;
+  fetch(`${API_BASE_URL}/api/analytics/pattern-click`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 function renderPatternGrid(container, patterns) {

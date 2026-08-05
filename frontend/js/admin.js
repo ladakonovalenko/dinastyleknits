@@ -16,6 +16,7 @@ let state = {
   newsletterStatus: "", // повідомлення після спроби відправки (успіх/помилка)
   syncStatus: "", // повідомлення після спроби синхронізації підписників
   analyticsPeriod: "week", // "day" | "week" | "month" | "year"
+  patternStatsPeriod: "week", // "day" | "week" | "month" | "year"
 };
 
 const root = document.getElementById("admin-root");
@@ -112,6 +113,7 @@ function renderDashboard() {
         <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${state.subscribers.length})</button>
         <button class="admin-tab ${state.activeTab === "newsletter" ? "is-active" : ""}" id="tab-newsletter" type="button">Newsletter</button>
         <button class="admin-tab ${state.activeTab === "analytics" ? "is-active" : ""}" id="tab-analytics" type="button">Analytics</button>
+        <button class="admin-tab ${state.activeTab === "pattern-stats" ? "is-active" : ""}" id="tab-pattern-stats" type="button">Pattern Stats</button>
       </div>
       <div id="tab-content"></div>
     </div>
@@ -134,6 +136,10 @@ function renderDashboard() {
     state.activeTab = "analytics";
     renderDashboard();
   });
+  document.getElementById("tab-pattern-stats").addEventListener("click", () => {
+    state.activeTab = "pattern-stats";
+    renderDashboard();
+  });
 
   if (state.activeTab === "subscribers") {
     renderSubscribersTab();
@@ -141,6 +147,8 @@ function renderDashboard() {
     renderNewsletterTab();
   } else if (state.activeTab === "analytics") {
     renderAnalyticsTab();
+  } else if (state.activeTab === "pattern-stats") {
+    renderPatternStatsTab();
   } else {
     renderPatternsTab();
   }
@@ -361,6 +369,69 @@ function renderAnalyticsChart(daily) {
       <text x="${padding}" y="${height + 15}" font-size="11" fill="var(--color-gray-500)">${escapeHtml(firstLabel)}</text>
       <text x="${width - padding}" y="${height + 15}" font-size="11" fill="var(--color-gray-500)" text-anchor="end">${escapeHtml(lastLabel)}</text>
     </svg>
+  `;
+}
+
+async function renderPatternStatsTab() {
+  const mount = document.getElementById("tab-content");
+  const period = state.patternStatsPeriod || "week";
+
+  mount.innerHTML = `
+      <h2 class="admin-section-title" style="margin-top: 0;">Product clicks</h2>
+      <p style="color: var(--color-gray-500); margin-top: -8px;">How many times each product card was clicked (opened on Etsy).</p>
+      <div class="admin-tabs" style="margin-bottom: var(--space-3);">
+        ${Object.entries(ANALYTICS_PERIOD_LABELS)
+          .map(
+            ([key, label]) =>
+              `<button class="admin-tab ${period === key ? "is-active" : ""}" data-pstat-period="${key}" type="button">${label}</button>`
+          )
+          .join("")}
+      </div>
+      <div id="pattern-stats-content"><p>Loading…</p></div>
+  `;
+
+  mount.querySelectorAll("[data-pstat-period]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.patternStatsPeriod = btn.dataset.pstatPeriod;
+      renderPatternStatsTab();
+    });
+  });
+
+  const content = document.getElementById("pattern-stats-content");
+  try {
+    const data = await Api.getPatternClickStats(state.token, period);
+    content.innerHTML = renderPatternStatsList(data.patterns);
+  } catch (err) {
+    content.innerHTML = `<p class="admin-message is-error">Error: ${escapeHtml(err.message || "Something went wrong.")}</p>`;
+  }
+}
+
+function renderPatternStatsList(patterns) {
+  if (!patterns || patterns.length === 0) {
+    return `<p style="color: var(--color-gray-500);">No clicks recorded for this period yet.</p>`;
+  }
+
+  const maxClicks = Math.max(1, ...patterns.map((p) => p.clicks));
+
+  return `
+    <div class="admin-list">
+      ${patterns
+        .map((p) => {
+          const barPercent = Math.round((p.clicks / maxClicks) * 100);
+          return `
+            <div class="admin-list-item" style="flex-direction: column; align-items: stretch; gap: 6px;">
+              <div style="display: flex; justify-content: space-between;">
+                <p class="admin-list-item__title" style="margin: 0;">${escapeHtml(p.title)}</p>
+                <p style="margin: 0; font-weight: 700;">${p.clicks}</p>
+              </div>
+              <div style="background: var(--color-gray-200, #eee); border-radius: 4px; height: 8px; overflow: hidden;">
+                <div style="background: #0297B1; height: 100%; width: ${barPercent}%;"></div>
+              </div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
   `;
 }
 
