@@ -2,16 +2,27 @@
 Власна статистика відвідувань сайту — повністю на нашому сервері, у нашій
 БД, без жодного стороннього сервісу (Vercel, Google Analytics тощо).
 
-Дизайн навмисно простий: записуємо лише шлях сторінки й час — без cookies,
-без IP-адрес, без будь-яких ідентифікаторів відвідувача. Через це можемо
-рахувати перегляди сторінок (page views), але НЕ унікальних відвідувачів —
-для цього знадобився б якийсь спосіб відрізняти одну людину від іншої
-(cookie чи схоже), а це свідомо не додано (менше персональних даних —
-менше клопоту з приватністю, і сайт і так ніде цим не користується).
+Рахуємо і перегляди сторінок (page views), і унікальних відвідувачів —
+але не через cookies, а через ОДНОСТОРОННІЙ ХЕШ IP-адреси відвідувача
+разом з поточною датою. Це означає:
+  - Той самий відвідувач у той самий день завжди дає той самий хеш —
+    можна порахувати, скільки різних людей заходило за день.
+  - Наступного дня хеш для тієї самої людини буде вже ІНШИЙ — неможливо
+    відстежити одну людину протягом кількох днів чи тижнів.
+  - Із самого хешу неможливо відновити реальну IP-адресу назад.
+  - Реальна IP-адреса ніде не зберігається — рахується хеш і одразу
+    забувається.
+
+Чесне обмеження: через щоденну ротацію хешу, "унікальні відвідувачі за
+тиждень/місяць" — це сума унікальних-за-кожен-день, а не дедуплікація
+однієї людини протягом усього періоду (людина, що заходила в понеділок і
+у вівторок, порахується як 2 різні відвідувачі). Це свідомий компроміс
+заради приватності.
 """
+import hashlib
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -19,6 +30,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..analytics_models import PageView
 from ..auth import get_current_admin
+from ..config import JWT_SECRET
 from ..database import get_db
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
@@ -35,14 +47,36 @@ class TrackRequest(BaseModel):
     path: str
 
 
+def _get_client_ip(request: Request) -> str:
+    """Сайт працює за проксі (Apache/Passenger на cPanel), тому пряма IP
+    з'єднання може бути внутрішньою адресою проксі, а не реальною IP
+    відвідувача. Спершу перевіряємо стандартний заголовок X-Forwarded-For
+    (перше значення в ньому — реальний клієнт), і лише як запасний варіант
+    беремо IP самого з'єднання."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _hash_visitor(ip: str) -> str:
+    """Односторонній хеш IP + сьогоднішня дата + секрет застосунку (щоб
+    хеш не можна було просто підібрати перебором відомих IP). Реальна IP
+    ніде не зберігається — лише цей хеш."""
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    raw = f"{ip}|{today}|{JWT_SECRET}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
 @router.post("/track")
-def track_page_view(payload: TrackRequest, db: Session = Depends(get_db)):
+def track_page_view(payload: TrackRequest, request: Request, db: Session = Depends(get_db)):
     """Публічний ендпоінт — викликається одним маленьким скриптом з кожної
     публічної сторінки сайту при завантаженні. Ніколи не повинен ламати
     сторінку відвідувачу, навіть якщо запис у БД не вдався з якоїсь причини."""
     try:
         path = (payload.path or "/").strip()[:255]
-        db.add(PageView(path=path))
+        visitor_hash = _hash_visitor(_get_client_ip(request))
+        db.add(PageView(path=path, visitor_hash=visitor_hash))
         db.commit()
     except Exception as e:
         db.rollback()
@@ -65,6 +99,7 @@ def analytics_summary(
         db.query(
             func.date(PageView.created_at).label("day"),
             func.count(PageView.id).label("pageviews"),
+            func.count(func.distinct(PageView.visitor_hash)).label("visitors"),
         )
         .filter(PageView.created_at >= since)
         .group_by(func.date(PageView.created_at))
@@ -72,11 +107,13 @@ def analytics_summary(
         .all()
     )
 
-    daily = [{"date": str(r.day), "pageviews": r.pageviews} for r in rows]
+    daily = [{"date": str(r.day), "pageviews": r.pageviews, "visitors": r.visitors} for r in rows]
     total_pageviews = sum(r["pageviews"] for r in daily)
+    total_visitors = sum(r["visitors"] for r in daily)
 
     return {
         "period": period,
         "total_pageviews": total_pageviews,
+        "total_visitors": total_visitors,
         "daily": daily,
     }

@@ -10,12 +10,11 @@ let state = {
   token: localStorage.getItem(TOKEN_KEY) || null,
   patterns: [],
   subscribers: [],
-  activeTab: "patterns", // "patterns" | "subscribers" | "newsletter" | "analytics"
+  activeTab: "patterns", // "patterns" | "subscribers" | "newsletter"
   editingSlug: null, // null = форма "додати новий", інакше — slug патерну, який редагується
   formError: "",
   newsletterStatus: "", // повідомлення після спроби відправки (успіх/помилка)
   syncStatus: "", // повідомлення після спроби синхронізації підписників
-  analyticsPeriod: "week", // "day" | "week" | "month" | "year"
 };
 
 const root = document.getElementById("admin-root");
@@ -109,9 +108,8 @@ function renderDashboard() {
     <div class="admin-container">
       <div class="admin-tabs">
         <button class="admin-tab ${state.activeTab === "patterns" ? "is-active" : ""}" id="tab-patterns" type="button">Patterns</button>
-        <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${state.subscribers.length})</button>
+        <button class="admin-tab ${state.activeTab === "subscribers" ? "is-active" : ""}" id="tab-subscribers" type="button">Subscribers (${activeSubscriberCount()})</button>
         <button class="admin-tab ${state.activeTab === "newsletter" ? "is-active" : ""}" id="tab-newsletter" type="button">Newsletter</button>
-        <button class="admin-tab ${state.activeTab === "analytics" ? "is-active" : ""}" id="tab-analytics" type="button">Analytics</button>
       </div>
       <div id="tab-content"></div>
     </div>
@@ -130,17 +128,11 @@ function renderDashboard() {
     state.activeTab = "newsletter";
     renderDashboard();
   });
-  document.getElementById("tab-analytics").addEventListener("click", () => {
-    state.activeTab = "analytics";
-    renderDashboard();
-  });
 
   if (state.activeTab === "subscribers") {
     renderSubscribersTab();
   } else if (state.activeTab === "newsletter") {
     renderNewsletterTab();
-  } else if (state.activeTab === "analytics") {
-    renderAnalyticsTab();
   } else {
     renderPatternsTab();
   }
@@ -215,10 +207,12 @@ function renderPatternsTab() {
 
 function renderSubscribersTab() {
   const mount = document.getElementById("tab-content");
+  const active = activeSubscriberCount();
+  const unsubCount = state.subscribers.length - active;
 
   mount.innerHTML = `
       <div class="admin-subscribers-header">
-        <h2 class="admin-section-title" style="margin-top: 0;">Subscribers (${state.subscribers.length})</h2>
+        <h2 class="admin-section-title" style="margin-top: 0;">Subscribers (${active} active${unsubCount ? `, ${unsubCount} unsubscribed` : ""})</h2>
         <button class="btn btn-outline" id="export-csv-btn" type="button" ${state.subscribers.length ? "" : "disabled"}>Export CSV</button>
       </div>
       <div class="admin-list">
@@ -233,6 +227,10 @@ function renderSubscribersTab() {
   document.getElementById("export-csv-btn")?.addEventListener("click", exportSubscribersCsv);
 }
 
+function activeSubscriberCount() {
+  return state.subscribers.filter((s) => !s.unsubscribed).length;
+}
+
 function renderSubscriberItem(subscriber) {
   const date = new Date(subscriber.created_at).toLocaleDateString("en-US", {
     year: "numeric",
@@ -242,7 +240,7 @@ function renderSubscriberItem(subscriber) {
   return `
     <div class="admin-list-item">
       <div class="admin-list-item__info">
-        <p class="admin-list-item__title">${escapeHtml(subscriber.email)}</p>
+        <p class="admin-list-item__title">${escapeHtml(subscriber.email)}${subscriber.unsubscribed ? ` <span style="color: var(--color-gray-500); font-weight: 400;">(unsubscribed)</span>` : ""}</p>
         <p class="admin-list-item__price">Joined ${date}</p>
       </div>
     </div>
@@ -277,90 +275,6 @@ function renderListItem(pattern) {
         <button class="btn-danger" id="delete-${pattern.id}" type="button">Delete</button>
       </div>
     </div>
-  `;
-}
-
-// ---------- Analytics ----------
-
-const ANALYTICS_PERIOD_LABELS = { day: "Day", week: "Week", month: "Month", year: "Year" };
-
-async function renderAnalyticsTab() {
-  const mount = document.getElementById("tab-content");
-  const period = state.analyticsPeriod || "week";
-
-  mount.innerHTML = `
-      <h2 class="admin-section-title" style="margin-top: 0;">Site visitors</h2>
-      <div class="admin-tabs" style="margin-bottom: var(--space-3);">
-        ${Object.entries(ANALYTICS_PERIOD_LABELS)
-          .map(
-            ([key, label]) =>
-              `<button class="admin-tab ${period === key ? "is-active" : ""}" data-period="${key}" type="button">${label}</button>`
-          )
-          .join("")}
-      </div>
-      <div id="analytics-content"><p>Loading…</p></div>
-  `;
-
-  mount.querySelectorAll("[data-period]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.analyticsPeriod = btn.dataset.period;
-      renderAnalyticsTab();
-    });
-  });
-
-  const content = document.getElementById("analytics-content");
-  try {
-    const data = await Api.getAnalyticsSummary(state.token, period);
-    content.innerHTML = `
-      <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-3);">
-        <div>
-          <p style="font-size: 2rem; font-weight: 700; margin: 0;">${data.total_pageviews}</p>
-          <p style="color: var(--color-gray-500); margin: 0;">Page views</p>
-        </div>
-        <div>
-          <p style="font-size: 2rem; font-weight: 700; margin: 0;">${data.total_visitors}</p>
-          <p style="color: var(--color-gray-500); margin: 0;">Visitors</p>
-        </div>
-      </div>
-      ${renderAnalyticsChart(data.daily)}
-    `;
-  } catch (err) {
-    content.innerHTML = `<p class="admin-message is-error">Error: ${escapeHtml(err.message || "Something went wrong.")}</p>`;
-  }
-}
-
-function renderAnalyticsChart(daily) {
-  if (!daily || daily.length === 0) {
-    return `<p style="color: var(--color-gray-500);">No data for this period yet.</p>`;
-  }
-
-  const width = 700;
-  const height = 200;
-  const padding = 30;
-  const maxValue = Math.max(1, ...daily.map((d) => d.pageviews));
-  const barWidth = (width - padding * 2) / daily.length;
-
-  const bars = daily
-    .map((d, i) => {
-      const barHeight = (d.pageviews / maxValue) * (height - padding * 2);
-      const x = padding + i * barWidth;
-      const y = height - padding - barHeight;
-      return `<rect x="${x + 2}" y="${y}" width="${Math.max(1, barWidth - 4)}" height="${barHeight}" fill="#0297B1" rx="2">
-        <title>${escapeHtml(d.date)}: ${d.pageviews} views, ${d.visitors} visitors</title>
-      </rect>`;
-    })
-    .join("");
-
-  const firstLabel = daily[0]?.date || "";
-  const lastLabel = daily[daily.length - 1]?.date || "";
-
-  return `
-    <svg viewBox="0 0 ${width} ${height + 20}" style="width: 100%; height: auto;">
-      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="var(--color-gray-300)" />
-      ${bars}
-      <text x="${padding}" y="${height + 15}" font-size="11" fill="var(--color-gray-500)">${escapeHtml(firstLabel)}</text>
-      <text x="${width - padding}" y="${height + 15}" font-size="11" fill="var(--color-gray-500)" text-anchor="end">${escapeHtml(lastLabel)}</text>
-    </svg>
   `;
 }
 

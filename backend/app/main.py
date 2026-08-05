@@ -9,7 +9,7 @@ from .config import ALLOWED_ORIGINS
 from .database import Base, engine
 from .limiter import limiter
 from .migrations import run_auto_migrations
-from .routers import auth_router, newsletter, patterns, subscribers
+from .routers import analytics, auth_router, newsletter, patterns, subscribers
 
 app = FastAPI(title="DinaStyleKnits API", version="0.1.0")
 app.state.limiter = limiter
@@ -46,18 +46,41 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-@app.on_event("startup")
-def on_startup():
-    # Створює таблиці, якщо їх ще немає, і дотягує колонки, яких бракує
-    # в уже існуючих таблицях (легкі авто-міграції, без Alembic).
-    Base.metadata.create_all(bind=engine)
+def _run_startup_tasks():
+    """Створює таблиці, яких ще немає, і дотягує колонки, яких бракує в уже
+    існуючих таблицях (легкі авто-міграції, без Alembic).
+
+    ⚠️ Виконується одразу тут, на рівні імпорту модуля, а НЕ лише через
+    @app.on_event("startup") нижче. Причина: на хостингу cPanel/Passenger
+    застосунок запускається через passenger_wsgi.py, який обгортає наш
+    ASGI-застосунок бібліотекою a2wsgi для сумісності з WSGI. Перевірка
+    показала, що a2wsgi не запускає ASGI lifespan-подію (startup/shutdown) —
+    @app.on_event("startup") міг узагалі ніколи не виконуватись у
+    продакшені. Виклик тут гарантує, що це реально станеться (імпорт модуля
+    відбувається завжди, незалежно від сервера), навіть якщо lifespan-подія
+    на конкретному хостингу не підтримується. Викликаємо це й у
+    @app.on_event("startup") теж — для звичайних ASGI-серверів це просто
+    означає повторний (безпечний, ідемпотентний) виклик."""
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"[startup] create_all: {e}")
+
     run_auto_migrations()
 
     if ALLOWED_ORIGINS == ["*"]:
         print(
             "[SECURITY WARNING] ALLOWED_ORIGINS = '*' — CORS відкритий для будь-якого "
-            "сайту. Звузьте до реального домену фронтенду в Environment Variables на Render."
+            "сайту. Звузьте до реального домену фронтенду в Environment Variables."
         )
+
+
+_run_startup_tasks()
+
+
+@app.on_event("startup")
+def on_startup():
+    _run_startup_tasks()
 
 
 # Роздача зображень товарів: /static/images/<filename>.jpg
@@ -67,6 +90,7 @@ app.include_router(patterns.router)
 app.include_router(subscribers.router)
 app.include_router(auth_router.router)
 app.include_router(newsletter.router)
+app.include_router(analytics.router)
 
 
 @app.get("/api/health")

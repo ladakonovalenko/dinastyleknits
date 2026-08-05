@@ -146,4 +146,15 @@ const Api = {
     }
     return res.json();
   },
+
+  async getAnalyticsSummary(token, period) {
+    const res = await fetch(`${API_BASE_URL}/api/analytics/summary?period=${encodeURIComponent(period)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to load analytics");
+    }
+    return res.json();
+  },
 };
